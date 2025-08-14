@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "name": "ai-roundtable-frontend",
+  "builds": [
+    {
+      "src": "client/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/client/dist/$1"
+    }
+  ],
+  "env": {
+    "VITE_API_URL": "https://ai-roundtable-server.onrender.com",
+    "VITE_SOCKET_URL": "https://ai-roundtable-server.onrender.com",
+    "VITE_ENABLE_AI_TOPICS": "true",
+    "VITE_ENABLE_AUDIO": "true"
+  },
+  "buildCommand": "cd client && npm run build",
+  "outputDirectory": "client/dist",
+  "installCommand": "cd client && npm install"
+}

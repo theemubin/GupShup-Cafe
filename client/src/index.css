@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles for the roundtable application */
+@layer base {
+  body {
+    @apply bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen;
+  }
+}
+
+@layer components {
+  /* Roundtable specific styles */
+  .chair {
+    @apply w-12 h-12 rounded-full border-4 border-roundtable-chair bg-roundtable-chair 
+           shadow-lg transition-all duration-300 flex items-center justify-center
+           relative cursor-pointer;
+  }
+  
+  .chair.active {
+    @apply border-roundtable-active bg-roundtable-active shadow-xl scale-110 animate-pulse-active;
+  }
+  
+  .chair.speaking {
+    @apply border-green-500 bg-green-100 shadow-green-300 shadow-xl;
+  }
+  
+  .chair-label {
+    @apply absolute -bottom-8 left-1/2 transform -translate-x-1/2 
+           text-xs font-medium text-gray-700 bg-white px-2 py-1 rounded-md shadow-sm;
+  }
+  
+  .roundtable {
+    @apply relative w-80 h-80 bg-roundtable-wood rounded-full border-8 border-roundtable-wood
+           shadow-2xl flex items-center justify-center;
+  }
+  
+  .topic-display {
+    @apply absolute inset-4 bg-white rounded-full shadow-inner border-4 border-gray-200
+           flex items-center justify-center p-4 text-center;
+  }
+  
+  /* Timer styles */
+  .timer-ring {
+    @apply absolute inset-0 rounded-full;
+    background: conic-gradient(from 0deg, #10B981 0deg, #10B981 var(--progress), #E5E7EB var(--progress), #E5E7EB 360deg);
+  }
+  
+  /* Animation for joining participants */
+  .chair-enter {
+    animation: chairAppear 0.5s ease-out;
+  }
+  
+  @keyframes chairAppear {
+    from {
+      opacity: 0;
+      transform: scale(0.5) translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+  
+  /* Mic indicator */
+  .mic-indicator {
+    @apply absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full 
+           border-2 border-white flex items-center justify-center;
+  }
+  
+  .mic-indicator.active {
+    @apply bg-green-500 animate-pulse;
+  }
+}
