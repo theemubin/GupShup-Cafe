@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Campus Rewards System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .admin-body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .admin-header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .admin-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="80" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="60" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="60" cy="40" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .admin-header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 700;
+            position: relative;
+            z-index: 2;
+        }
+
+        .admin-header p {
+            margin: 0.5rem 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .admin-nav {
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0;
+            overflow-x: auto;
+        }
+
+        .admin-nav-list {
+            display: flex;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            min-width: 800px;
+        }
+
+        .admin-nav-item {
+            flex: 1;
+        }
+
+        .admin-nav-link {
+            display: block;
+            padding: 1.5rem 1rem;
+            text-decoration: none;
+            color: #64748b;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+        }
+
+        .admin-nav-link:hover {
+            background: #e2e8f0;
+            color: #334155;
+        }
+
+        .admin-nav-link.active {
+            background: white;
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+
+        .admin-nav-link i {
+            display: block;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .admin-content {
+            padding: 2rem;
+            min-height: 600px;
+        }
+
+        .admin-section {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        .admin-section h3 {
+            margin: 0 0 1.5rem 0;
+            color: #1e293b;
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .admin-section h3 i {
+            color: #3b82f6;
+            font-size: 1.25rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            border: none;
+            padding: 0.875rem 2rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .btn-success:hover {
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+        }
+
+        .stat-card i {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: #3b82f6;
+        }
+
+        .stat-card h4 {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .stat-card p {
+            margin: 0.5rem 0 0 0;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .data-table {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+            margin-top: 1.5rem;
+        }
+
+        .data-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .data-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table tr:hover {
+            background: #f8fafc;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .image-upload-area {
+            border: 2px dashed #d1d5db;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+
+        .image-upload-area:hover {
+            border-color: #3b82f6;
+            background: #f0f7ff;
+        }
+
+        .image-upload-area.dragover {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .image-preview {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 8px;
+            margin: 1rem auto;
+            display: block;
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-box input {
+            padding-left: 3rem;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+        }
+
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .alert-success {
+            background: #f0fdf4;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .alert-info {
+            background: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .campus-selector {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid #e5e7eb;
+        }
+
+        .campus-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .campus-card {
+            padding: 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .campus-card:hover {
+            border-color: #3b82f6;
+            background: #f0f7ff;
+        }
+
+        .campus-card.selected {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e5e7eb;
+            border-top: 2px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .admin-body {
+                padding: 1rem;
+            }
+
+            .admin-content {
+                padding: 1rem;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .quick-actions {
+                flex-direction: column;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body class="admin-body">
+    <div class="admin-container">
+        <!-- Header -->
+        <div class="admin-header">
+            <h1><i class="fas fa-shield-alt"></i> Admin Dashboard</h1>
+            <p>Manage your campus rewards system with powerful administrative tools</p>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="admin-nav">
+            <ul class="admin-nav-list">
+                <li class="admin-nav-item">
+                    <a href="#" class="admin-nav-link active" data-tab="overview">
+                        <i class="fas fa-chart-line"></i>
+                        Overview
+                    </a>
+                </li>
+                <li class="admin-nav-item">
+                    <a href="#" class="admin-nav-link" data-tab="rewards">
+                        <i class="fas fa-gift"></i>
+                        Rewards
+                    </a>
+                </li>
+                <li class="admin-nav-item">
+                    <a href="#" class="admin-nav-link" data-tab="students">
+                        <i class="fas fa-users"></i>
+                        Students
+                    </a>
+                </li>
+                <li class="admin-nav-item">
+                    <a href="#" class="admin-nav-link" data-tab="houses">
+                        <i class="fas fa-home"></i>
+                        Houses
+                    </a>
+                </li>
+                <li class="admin-nav-item">
+                    <a href="#" class="admin-nav-link" data-tab="competitions">
+                        <i class="fas fa-trophy"></i>
+                        Competitions
+                    </a>
+                </li>
+                <li class="admin-nav-item">
+                    <a href="#" class="admin-nav-link" data-tab="bulk">
+                        <i class="fas fa-upload"></i>
+                        Bulk Import
+                    </a>
+                </li>
+                <li class="admin-nav-item">
+                    <a href="#" class="admin-nav-link" data-tab="settings">
+                        <i class="fas fa-cog"></i>
+                        Settings
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Content -->
+        <div class="admin-content">
+            <!-- Overview Tab -->
+            <div class="tab-content active" id="overview-tab">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <i class="fas fa-users"></i>
+                        <h4 id="total-students">Loading...</h4>
+                        <p>Total Students</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-gift"></i>
+                        <h4 id="total-rewards">Loading...</h4>
+                        <p>Available Rewards</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-trophy"></i>
+                        <h4 id="total-competitions">Loading...</h4>
+                        <p>Active Competitions</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-school"></i>
+                        <h4 id="total-campuses">8</h4>
+                        <p>Active Campuses</p>
+                    </div>
+                </div>
+
+                <div class="admin-section">
+                    <h3><i class="fas fa-chart-bar"></i> Quick Analytics</h3>
+                    <div class="campus-selector">
+                        <label><strong>Select Campus for Analytics:</strong></label>
+                        <div class="campus-grid">
+                            <div class="campus-card" data-campus="all">All Campuses</div>
+                            <div class="campus-card" data-campus="pune">Pune</div>
+                            <div class="campus-card" data-campus="dharamshala">Dharamshala</div>
+                            <div class="campus-card" data-campus="raigarh">Raigarh</div>
+                            <div class="campus-card" data-campus="dantewada">Dantewada</div>
+                            <div class="campus-card" data-campus="kishanganj">Kishanganj</div>
+                            <div class="campus-card" data-campus="jashpur">Jashpur</div>
+                            <div class="campus-card" data-campus="sarjaapura">Sarjaapura</div>
+                            <div class="campus-card" data-campus="himachal-bca">Himachal BCA</div>
+                        </div>
+                    </div>
+                    <div id="analytics-content">
+                        <!-- Analytics will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rewards Tab -->
+            <div class="tab-content" id="rewards-tab">
+                <div class="admin-section">
+                    <h3><i class="fas fa-plus"></i> Add New Reward</h3>
+                    <form id="reward-form">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="reward-title">Reward Title</label>
+                                <input type="text" id="reward-title" required placeholder="e.g., Coffee Shop Voucher">
+                            </div>
+                            <div class="form-group">
+                                <label for="reward-level">Reward Level</label>
+                                <select id="reward-level" required>
+                                    <option value="">Select Level</option>
+                                    <option value="1">Level 1 (100-299 points)</option>
+                                    <option value="2">Level 2 (300-599 points)</option>
+                                    <option value="3">Level 3 (600-999 points)</option>
+                                    <option value="4">Level 4 (1000+ points)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="reward-campus">Campus</label>
+                                <select id="reward-campus" required>
+                                    <option value="">Select Campus</option>
+                                    <option value="all">All Campuses</option>
+                                    <option value="pune">Pune Campus</option>
+                                    <option value="dharamshala">Dharamshala Campus</option>
+                                    <option value="raigarh">Raigarh Campus</option>
+                                    <option value="dantewada">Dantewada Campus</option>
+                                    <option value="kishanganj">Kishanganj Campus</option>
+                                    <option value="jashpur">Jashpur Campus</option>
+                                    <option value="sarjaapura">Sarjaapura Campus</option>
+                                    <option value="himachal-bca">Himachal BCA Campus</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="reward-description">Description</label>
+                            <textarea id="reward-description" required placeholder="Describe what this reward offers and how students can claim it..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="reward-image">Reward Image</label>
+                            <div class="image-upload-area" id="reward-image-upload">
+                                <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: #9ca3af; margin-bottom: 1rem;"></i>
+                                <p><strong>Click to upload</strong> or drag and drop</p>
+                                <p style="color: #6b7280; font-size: 0.875rem;">PNG, JPG up to 2MB</p>
+                                <input type="file" id="reward-image" accept="image/*" style="display: none;">
+                                <img id="reward-image-preview" class="image-preview" style="display: none;">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn">
+                            <i class="fas fa-plus"></i>
+                            Add Reward
+                        </button>
+                    </form>
+                </div>
+
+                <div class="admin-section">
+                    <h3><i class="fas fa-list"></i> Manage Existing Rewards</h3>
+                    <div class="search-box">
+                        <input type="text" id="reward-search" placeholder="Search rewards...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div class="data-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Image</th>
+                                    <th>Title</th>
+                                    <th>Level</th>
+                                    <th>Campus</th>
+                                    <th>Status</th>
+                                    <th>Claimed</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rewards-table-body">
+                                <!-- Rewards will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Students Tab -->
+            <div class="tab-content" id="students-tab">
+                <div class="admin-section">
+                    <h3><i class="fas fa-user-plus"></i> Add New Student</h3>
+                    <form id="student-form">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="student-id">Student ID</label>
+                                <input type="text" id="student-id" required placeholder="e.g., PUNE_S001">
+                            </div>
+                            <div class="form-group">
+                                <label for="student-name">Full Name</label>
+                                <input type="text" id="student-name" required placeholder="e.g., Arjun Kumar">
+                            </div>
+                            <div class="form-group">
+                                <label for="student-email">Email</label>
+                                <input type="email" id="student-email" required placeholder="e.g., arjun.kumar@pune.edu">
+                            </div>
+                            <div class="form-group">
+                                <label for="student-campus">Campus</label>
+                                <select id="student-campus" required>
+                                    <option value="">Select Campus</option>
+                                    <option value="pune">Pune Campus</option>
+                                    <option value="dharamshala">Dharamshala Campus</option>
+                                    <option value="raigarh">Raigarh Campus</option>
+                                    <option value="dantewada">Dantewada Campus</option>
+                                    <option value="kishanganj">Kishanganj Campus</option>
+                                    <option value="jashpur">Jashpur Campus</option>
+                                    <option value="sarjaapura">Sarjaapura Campus</option>
+                                    <option value="himachal-bca">Himachal BCA Campus</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="student-house">House</label>
+                                <select id="student-house" required>
+                                    <option value="">Select House</option>
+                                    <option value="bageshree">Bageshree House</option>
+                                    <option value="bhairav">Bhairav House</option>
+                                    <option value="malhar">Malhar House</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="student-phone">Phone</label>
+                                <input type="tel" id="student-phone" placeholder="e.g., +91 9876543210">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn">
+                            <i class="fas fa-user-plus"></i>
+                            Add Student
+                        </button>
+                    </form>
+                </div>
+
+                <div class="admin-section">
+                    <h3><i class="fas fa-coins"></i> Manage Student Points</h3>
+                    <div class="search-box">
+                        <input type="text" id="student-points-search" placeholder="Search student by name or ID...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div id="student-search-results"></div>
+                    
+                    <form id="points-form" style="display: none;">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="point-type">Point Type</label>
+                                <select id="point-type" required>
+                                    <option value="">Select Point Type</option>
+                                    <option value="academic">Academic Points</option>
+                                    <option value="lifeSkills">Life Skills Points</option>
+                                    <option value="attendance">Attendance Bonus (+15)</option>
+                                    <option value="placement">Placement Bonus (+15)</option>
+                                    <option value="dropout">Dropout Penalty (-15)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="point-amount">Points</label>
+                                <input type="number" id="point-amount" required placeholder="Enter points (positive or negative)">
+                            </div>
+                            <div class="form-group">
+                                <label for="point-reason">Reason</label>
+                                <input type="text" id="point-reason" required placeholder="Reason for point adjustment">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn">
+                            <i class="fas fa-plus"></i>
+                            Update Points
+                        </button>
+                    </form>
+                </div>
+
+                <div class="admin-section">
+                    <h3><i class="fas fa-users"></i> All Students</h3>
+                    <div class="search-box">
+                        <input type="text" id="all-students-search" placeholder="Search all students...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div class="data-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Student ID</th>
+                                    <th>Name</th>
+                                    <th>Campus</th>
+                                    <th>House</th>
+                                    <th>Total Points</th>
+                                    <th>Rank</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="students-table-body">
+                                <!-- Students will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Houses Tab -->
+            <div class="tab-content" id="houses-tab">
+                <div class="admin-section">
+                    <h3><i class="fas fa-trophy"></i> House Competition Management</h3>
+                    <form id="house-competition-form">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="house-campus">Campus</label>
+                                <select id="house-campus" required>
+                                    <option value="">Select Campus</option>
+                                    <option value="pune">Pune Campus</option>
+                                    <option value="dharamshala">Dharamshala Campus</option>
+                                    <option value="raigarh">Raigarh Campus</option>
+                                    <option value="dantewada">Dantewada Campus</option>
+                                    <option value="kishanganj">Kishanganj Campus</option>
+                                    <option value="jashpur">Jashpur Campus</option>
+                                    <option value="sarjaapura">Sarjaapura Campus</option>
+                                    <option value="himachal-bca">Himachal BCA Campus</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="house-name">House</label>
+                                <select id="house-name" required>
+                                    <option value="">Select House</option>
+                                    <option value="bageshree">Bageshree House</option>
+                                    <option value="bhairav">Bhairav House</option>
+                                    <option value="malhar">Malhar House</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="competition-name">Competition Name</label>
+                                <input type="text" id="competition-name" required placeholder="e.g., Science Fair 2025">
+                            </div>
+                            <div class="form-group">
+                                <label for="house-points">Points Awarded</label>
+                                <input type="number" id="house-points" required placeholder="Competition points">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn">
+                            <i class="fas fa-trophy"></i>
+                            Award House Points
+                        </button>
+                    </form>
+                </div>
+
+                <div class="admin-section">
+                    <h3><i class="fas fa-chart-bar"></i> House Standings</h3>
+                    <div class="campus-selector">
+                        <label><strong>View House Standings by Campus:</strong></label>
+                        <div class="campus-grid">
+                            <div class="campus-card" data-campus="all">All Campuses</div>
+                            <div class="campus-card" data-campus="pune">Pune</div>
+                            <div class="campus-card" data-campus="dharamshala">Dharamshala</div>
+                            <div class="campus-card" data-campus="raigarh">Raigarh</div>
+                            <div class="campus-card" data-campus="dantewada">Dantewada</div>
+                            <div class="campus-card" data-campus="kishanganj">Kishanganj</div>
+                            <div class="campus-card" data-campus="jashpur">Jashpur</div>
+                            <div class="campus-card" data-campus="sarjaapura">Sarjaapura</div>
+                            <div class="campus-card" data-campus="himachal-bca">Himachal BCA</div>
+                        </div>
+                    </div>
+                    <div id="house-standings">
+                        <!-- House standings will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Competitions Tab -->
+            <div class="tab-content" id="competitions-tab">
+                <div class="admin-section">
+                    <h3><i class="fas fa-calendar-plus"></i> Create New Competition</h3>
+                    <form id="competition-form">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="comp-name">Competition Name</label>
+                                <input type="text" id="comp-name" required placeholder="e.g., Annual Science Fair">
+                            </div>
+                            <div class="form-group">
+                                <label for="comp-campus">Campus</label>
+                                <select id="comp-campus" required>
+                                    <option value="">Select Campus</option>
+                                    <option value="all">All Campuses</option>
+                                    <option value="pune">Pune Campus</option>
+                                    <option value="dharamshala">Dharamshala Campus</option>
+                                    <option value="raigarh">Raigarh Campus</option>
+                                    <option value="dantewada">Dantewada Campus</option>
+                                    <option value="kishanganj">Kishanganj Campus</option>
+                                    <option value="jashpur">Jashpur Campus</option>
+                                    <option value="sarjaapura">Sarjaapura Campus</option>
+                                    <option value="himachal-bca">Himachal BCA Campus</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="comp-date">Competition Date</label>
+                                <input type="date" id="comp-date" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="comp-points">Max Points</label>
+                                <input type="number" id="comp-points" required placeholder="Maximum points for winners">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="comp-description">Description</label>
+                            <textarea id="comp-description" placeholder="Describe the competition, rules, and how points will be awarded..."></textarea>
+                        </div>
+                        <button type="submit" class="btn">
+                            <i class="fas fa-calendar-plus"></i>
+                            Create Competition
+                        </button>
+                    </form>
+                </div>
+
+                <div class="admin-section">
+                    <h3><i class="fas fa-list"></i> Active Competitions</h3>
+                    <div class="data-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Competition</th>
+                                    <th>Campus</th>
+                                    <th>Date</th>
+                                    <th>Max Points</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="competitions-table-body">
+                                <!-- Competitions will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bulk Import Tab -->
+            <div class="tab-content" id="bulk-tab">
+                <div class="admin-section">
+                    <h3><i class="fas fa-download"></i> Download CSV Templates</h3>
+                    <p>Download these templates to bulk import data. Fill them with your data and upload below.</p>
+                    <div class="quick-actions">
+                        <button class="btn btn-secondary" onclick="downloadTemplate('students')">
+                            <i class="fas fa-users"></i>
+                            Students Template
+                        </button>
+                        <button class="btn btn-secondary" onclick="downloadTemplate('rewards')">
+                            <i class="fas fa-gift"></i>
+                            Rewards Template
+                        </button>
+                        <button class="btn btn-secondary" onclick="downloadTemplate('competitions')">
+                            <i class="fas fa-trophy"></i>
+                            Competitions Template
+                        </button>
+                    </div>
+                </div>
+
+                <div class="admin-section">
+                    <h3><i class="fas fa-upload"></i> Bulk Import Data</h3>
+                    <div id="csv-upload-container">
+                        <!-- CSV upload component will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div class="tab-content" id="settings-tab">
+                <div class="admin-section">
+                    <h3><i class="fas fa-database"></i> Database Management</h3>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        Use these tools carefully. Always backup your data before making major changes.
+                    </div>
+                    <div class="quick-actions">
+                        <button class="btn btn-success" onclick="backupData()">
+                            <i class="fas fa-download"></i>
+                            Backup Database
+                        </button>
+                        <button class="btn btn-danger" onclick="clearAllData()" style="margin-left: 1rem;">
+                            <i class="fas fa-trash-alt"></i>
+                            Clear All Data
+                        </button>
+                    </div>
+                </div>
+
+                <div class="admin-section">
+                    <h3><i class="fas fa-key"></i> Access Management</h3>
+                    <form id="admin-settings-form">
+                        <div class="form-group">
+                            <label for="admin-password">Admin Password</label>
+                            <input type="password" id="admin-password" placeholder="Change admin password">
+                        </div>
+                        <div class="form-group">
+                            <label for="session-timeout">Session Timeout (minutes)</label>
+                            <input type="number" id="session-timeout" value="30" min="5" max="480">
+                        </div>
+                        <button type="submit" class="btn">
+                            <i class="fas fa-save"></i>
+                            Save Settings
+                        </button>
+                    </form>
+                </div>
+
+                <div class="admin-section">
+                    <h3><i class="fas fa-link"></i> Quick Links</h3>
+                    <div class="quick-actions">
+                        <a href="/" class="btn btn-secondary" target="_blank">
+                            <i class="fas fa-home"></i>
+                            View User Dashboard
+                        </a>
+                        <a href="https://console.firebase.google.com/project/efforts-celebrations/firestore" class="btn btn-secondary" target="_blank">
+                            <i class="fab fa-google"></i>
+                            Firebase Console
+                        </a>
+                        <button class="btn btn-secondary" onclick="downloadSystemReport()">
+                            <i class="fas fa-chart-line"></i>
+                            System Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Admin Scripts -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-service.js"></script>
+    <script src="js/csv-upload.js"></script>
+    <script src="js/admin-dashboard.js"></script>
+</body>
+</html>

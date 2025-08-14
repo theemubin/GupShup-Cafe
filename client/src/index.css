@@ -7,48 +7,83 @@
   body {
     @apply bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen;
   }
+  
+  /* Custom CSS variables for dynamic values */
+  :root {
+    --progress: 0deg;
+    --chair-count: 6;
+  }
 }
 
 @layer components {
   /* Roundtable specific styles */
   .chair {
-    @apply w-12 h-12 rounded-full border-4 border-roundtable-chair bg-roundtable-chair 
+    @apply w-12 h-12 rounded-full border-4 border-gray-300 bg-gray-100 
            shadow-lg transition-all duration-300 flex items-center justify-center
-           relative cursor-pointer;
+           relative cursor-pointer hover:scale-105 hover:shadow-xl
+           focus:outline-none focus:ring-4 focus:ring-blue-300 focus:ring-opacity-50;
   }
   
   .chair.active {
-    @apply border-roundtable-active bg-roundtable-active shadow-xl scale-110 animate-pulse-active;
+    @apply border-blue-500 bg-blue-100 shadow-xl scale-110 animate-pulse-active;
   }
   
   .chair.speaking {
-    @apply border-green-500 bg-green-100 shadow-green-300 shadow-xl;
+    @apply border-green-500 bg-green-100 shadow-green-300 shadow-xl animate-speaking-pulse;
+  }
+  
+  .chair.muted {
+    @apply border-gray-400 bg-gray-200 opacity-60;
   }
   
   .chair-label {
     @apply absolute -bottom-8 left-1/2 transform -translate-x-1/2 
-           text-xs font-medium text-gray-700 bg-white px-2 py-1 rounded-md shadow-sm;
+           text-xs font-medium text-gray-700 bg-white px-2 py-1 rounded-md shadow-sm
+           transition-all duration-200 opacity-0 group-hover:opacity-100;
+  }
+  
+  .chair:hover .chair-label {
+    @apply opacity-100;
   }
   
   .roundtable {
-    @apply relative w-80 h-80 bg-roundtable-wood rounded-full border-8 border-roundtable-wood
-           shadow-2xl flex items-center justify-center;
+    @apply relative w-80 h-80 bg-amber-800 rounded-full border-8 border-amber-900
+           shadow-2xl flex items-center justify-center group
+           md:w-96 md:h-96 lg:w-[32rem] lg:h-[32rem];
   }
   
   .topic-display {
     @apply absolute inset-4 bg-white rounded-full shadow-inner border-4 border-gray-200
-           flex items-center justify-center p-4 text-center;
+           flex items-center justify-center p-4 text-center
+           md:inset-6 lg:inset-8;
+  }
+  
+  .topic-text {
+    @apply text-sm font-semibold text-gray-800 leading-tight
+           md:text-base lg:text-lg;
   }
   
   /* Timer styles */
   .timer-ring {
-    @apply absolute inset-0 rounded-full;
+    @apply absolute inset-0 rounded-full transition-all duration-500;
     background: conic-gradient(from 0deg, #10B981 0deg, #10B981 var(--progress), #E5E7EB var(--progress), #E5E7EB 360deg);
+  }
+  
+  .timer-warning {
+    background: conic-gradient(from 0deg, #F59E0B 0deg, #F59E0B var(--progress), #E5E7EB var(--progress), #E5E7EB 360deg);
+  }
+  
+  .timer-critical {
+    background: conic-gradient(from 0deg, #EF4444 0deg, #EF4444 var(--progress), #E5E7EB var(--progress), #E5E7EB 360deg);
   }
   
   /* Animation for joining participants */
   .chair-enter {
     animation: chairAppear 0.5s ease-out;
+  }
+  
+  .chair-exit {
+    animation: chairDisappear 0.3s ease-in;
   }
   
   @keyframes chairAppear {
@@ -62,13 +97,167 @@
     }
   }
   
+  @keyframes chairDisappear {
+    from {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.5) translateY(-20px);
+    }
+  }
+  
+  @keyframes pulse-active {
+    0%, 100% {
+      transform: scale(1.1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.15);
+      opacity: 0.9;
+    }
+  }
+  
+  @keyframes speaking-pulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    }
+    50% {
+      box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+    }
+  }
+  
+  .animate-pulse-active {
+    animation: pulse-active 2s ease-in-out infinite;
+  }
+  
+  .animate-speaking-pulse {
+    animation: speaking-pulse 1.5s ease-in-out infinite;
+  }
+  
   /* Mic indicator */
   .mic-indicator {
     @apply absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full 
-           border-2 border-white flex items-center justify-center;
+           border-2 border-white flex items-center justify-center
+           transition-all duration-200;
   }
   
   .mic-indicator.active {
     @apply bg-green-500 animate-pulse;
+  }
+  
+  .mic-indicator.muted {
+    @apply bg-gray-500;
+  }
+  
+  /* Connection status indicators */
+  .connection-indicator {
+    @apply absolute -top-1 -left-1 w-4 h-4 rounded-full border-2 border-white;
+  }
+  
+  .connection-good {
+    @apply bg-green-500;
+  }
+  
+  .connection-poor {
+    @apply bg-yellow-500 animate-pulse;
+  }
+  
+  .connection-lost {
+    @apply bg-red-500 animate-ping;
+  }
+  
+  /* Control panel styles */
+  .control-panel {
+    @apply fixed bottom-4 left-1/2 transform -translate-x-1/2 
+           bg-white rounded-xl shadow-2xl border border-gray-200
+           p-4 flex items-center space-x-4
+           md:bottom-6 lg:bottom-8;
+  }
+  
+  .control-button {
+    @apply w-12 h-12 rounded-full border-2 flex items-center justify-center
+           transition-all duration-200 cursor-pointer
+           hover:scale-105 focus:outline-none focus:ring-4 focus:ring-opacity-50;
+  }
+  
+  .control-button.mute {
+    @apply border-red-500 bg-red-50 text-red-600 hover:bg-red-100
+           focus:ring-red-300;
+  }
+  
+  .control-button.unmute {
+    @apply border-green-500 bg-green-50 text-green-600 hover:bg-green-100
+           focus:ring-green-300;
+  }
+  
+  .control-button.leave {
+    @apply border-gray-500 bg-gray-50 text-gray-600 hover:bg-gray-100
+           focus:ring-gray-300;
+  }
+  
+  /* Participant list styles */
+  .participant-list {
+    @apply fixed right-4 top-1/2 transform -translate-y-1/2
+           bg-white rounded-xl shadow-2xl border border-gray-200
+           p-4 w-64 max-h-96 overflow-y-auto;
+  }
+  
+  .participant-item {
+    @apply flex items-center space-x-3 p-2 rounded-lg
+           hover:bg-gray-50 transition-colors duration-150;
+  }
+  
+  .participant-avatar {
+    @apply w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500
+           flex items-center justify-center text-white text-sm font-medium;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .chair {
+      @apply w-10 h-10;
+    }
+    
+    .roundtable {
+      @apply w-72 h-72;
+    }
+    
+    .participant-list {
+      @apply right-2 w-56;
+    }
+    
+    .control-panel {
+      @apply bottom-2 p-3;
+    }
+    
+    .control-button {
+      @apply w-10 h-10;
+    }
+  }
+}
+
+/* Utility classes */
+@layer utilities {
+  .text-shadow {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .chair-position-1 { transform: rotate(0deg) translateY(-160px) rotate(0deg); }
+  .chair-position-2 { transform: rotate(60deg) translateY(-160px) rotate(-60deg); }
+  .chair-position-3 { transform: rotate(120deg) translateY(-160px) rotate(-120deg); }
+  .chair-position-4 { transform: rotate(180deg) translateY(-160px) rotate(-180deg); }
+  .chair-position-5 { transform: rotate(240deg) translateY(-160px) rotate(-240deg); }
+  .chair-position-6 { transform: rotate(300deg) translateY(-160px) rotate(-300deg); }
+  
+  /* Dynamic chair positioning for different participant counts */
+  @media (min-width: 768px) {
+    .chair-position-1 { transform: rotate(0deg) translateY(-192px) rotate(0deg); }
+    .chair-position-2 { transform: rotate(60deg) translateY(-192px) rotate(-60deg); }
+    .chair-position-3 { transform: rotate(120deg) translateY(-192px) rotate(-120deg); }
+    .chair-position-4 { transform: rotate(180deg) translateY(-192px) rotate(-180deg); }
+    .chair-position-5 { transform: rotate(240deg) translateY(-192px) rotate(-240deg); }
+    .chair-position-6 { transform: rotate(300deg) translateY(-192px) rotate(-300deg); }
   }
 }

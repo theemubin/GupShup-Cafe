@@ -1,0 +1,11 @@
+Debug checklist for HeroSection background animation:
+
+1. The HeroSection component uses a single div.hero-bg for the background, and changes its backgroundImage style every 5 seconds.
+2. The CSS uses transition on background-image, but CSS cannot animate background-image changes smoothly between two images. Only opacity or transform can be animated.
+3. To achieve a smooth crossfade, two absolutely positioned divs are needed: one for the current image, one for the next, and animate opacity between them.
+4. The current implementation will cause the image to switch instantly, not fade.
+
+Solution:
+- Refactor HeroSection to render two divs: one for the current image, one for the next, and animate opacity for a true crossfade.
+- Animate opacity for a slow, smooth transition.
+- On click, keep the current image visible with higher opacity.

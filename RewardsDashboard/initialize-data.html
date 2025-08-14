@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Initialize Dashboard Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: #f8fafc;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 0.5rem;
+            font-size: 1rem;
+        }
+        .btn:hover { background: #2563eb; }
+        .btn:disabled { background: #9ca3af; cursor: not-allowed; }
+        .log {
+            background: #f3f4f6;
+            border-radius: 4px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: monospace;
+            font-size: 0.9rem;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #d1d5db;
+        }
+        .progress {
+            width: 100%;
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Initialize Campus Dashboard Data</h1>
+        <p>This will populate your Firestore database with sample data for all 8 campuses and houses.</p>
+        
+        <div class="actions">
+            <button class="btn" onclick="initializeAllData()" id="initBtn">
+                🏆 Initialize Complete Dashboard Data
+            </button>
+            <button class="btn" onclick="clearAllData()" id="clearBtn">
+                🗑️ Clear All Data
+            </button>
+            <button class="btn" onclick="viewDataInConsole()">
+                👀 View Data in Firebase Console
+            </button>
+        </div>
+        
+        <div class="progress" id="progressContainer" style="display: none;">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        
+        <div id="log" class="log">Ready to initialize data...\n</div>
+        
+        <div class="info">
+            <h3>📊 What will be created:</h3>
+            <ul>
+                <li><strong>8 Campuses</strong>: Pune, Dharamshala, Raigarh, Dantewada, Kishanganj, Jashpur, Sarjaapura, Himachal BCA</li>
+                <li><strong>24 Houses</strong>: 3 houses (Bageshree, Bhairav, Malhar) across each campus</li>
+                <li><strong>40 Students</strong>: 5 sample students per campus with realistic points</li>
+                <li><strong>15 Rewards</strong>: Various rewards across all levels and campuses</li>
+                <li><strong>Competitions</strong>: Sample house competition data</li>
+            </ul>
+            
+            <h3>🔗 After initialization:</h3>
+            <ul>
+                <li>Visit your dashboard at <a href="/" target="_blank">http://localhost:8000</a></li>
+                <li>Check the leaderboards - they'll be populated with real data</li>
+                <li>Test the CSV upload in Admin Panel → Bulk Operations</li>
+                <li>View your data in <a href="https://console.firebase.google.com/project/efforts-celebrations/firestore" target="_blank">Firebase Console</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDORRABIK1fPpreVGRNwwQbfTFMYH-cysM",
+            authDomain: "efforts-celebrations.firebaseapp.com",
+            projectId: "efforts-celebrations",
+            storageBucket: "efforts-celebrations.firebasestorage.app",
+            messagingSenderId: "14557716507",
+            appId: "1:14557716507:web:9e751db40ebb133be358be",
+            measurementId: "G-RJCDD0CB6D"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'red' : type === 'success' ? 'green' : type === 'warning' ? 'orange' : 'black';
+            logDiv.innerHTML += `<div style="color: ${color};">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateProgress(percent) {
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            progressContainer.style.display = 'block';
+            progressBar.style.width = `${percent}%`;
+        }
+
+        function setButtonsDisabled(disabled) {
+            document.getElementById('initBtn').disabled = disabled;
+            document.getElementById('clearBtn').disabled = disabled;
+        }
+
+        async function initializeAllData() {
+            setButtonsDisabled(true);
+            log('🚀 Starting complete data initialization...', 'info');
+            updateProgress(0);
+
+            try {
+                // 1. Initialize Campuses
+                log('📍 Creating campus data...', 'info');
+                await initializeCampuses();
+                updateProgress(20);
+
+                // 2. Initialize Houses
+                log('🏠 Creating house data...', 'info');
+                await initializeHouses();
+                updateProgress(40);
+
+                // 3. Initialize Students
+                log('👥 Creating student data...', 'info');
+                await initializeStudents();
+                updateProgress(60);
+
+                // 4. Initialize Rewards
+                log('🎁 Creating reward data...', 'info');
+                await initializeRewards();
+                updateProgress(80);
+
+                // 5. Initialize Competitions
+                log('🏆 Creating competition data...', 'info');
+                await initializeCompetitions();
+                updateProgress(100);
+
+                log('✅ Complete data initialization successful!', 'success');
+                log('🎉 Your dashboard is now ready with sample data!', 'success');
+                log('Visit http://localhost:8000 to see the populated dashboard', 'info');
+
+            } catch (error) {
+                log(`❌ Initialization failed: ${error.message}`, 'error');
+                console.error('Initialization error:', error);
+            } finally {
+                setButtonsDisabled(false);
+            }
+        }
+
+        async function initializeCampuses() {
+            const campusData = [
+                { id: 'pune', name: 'Pune Campus', points: 1340, rank: 1, trend: 'up', rewards: 18 },
+                { id: 'dharamshala', name: 'Dharamshala Campus', points: 1220, rank: 2, trend: 'down', rewards: 15 },
+                { id: 'raigarh', name: 'Raigarh Campus', points: 1140, rank: 3, trend: 'up', rewards: 12 },
+                { id: 'dantewada', name: 'Dantewada Campus', points: 950, rank: 4, trend: 'down', rewards: 10 },
+                { id: 'kishanganj', name: 'Kishanganj Campus', points: 820, rank: 5, trend: 'same', rewards: 8 },
+                { id: 'jashpur', name: 'Jashpur Campus', points: 680, rank: 6, trend: 'up', rewards: 6 },
+                { id: 'sarjaapura', name: 'Sarjaapura Campus', points: 540, rank: 7, trend: 'down', rewards: 4 },
+                { id: 'himachal-bca', name: 'Himachal BCA Campus', points: 420, rank: 8, trend: 'same', rewards: 3 }
+            ];
+
+            const batch = db.batch();
+            campusData.forEach(campus => {
+                const docRef = db.collection('campuses').doc(campus.id);
+                batch.set(docRef, {
+                    ...campus,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            });
+
+            await batch.commit();
+            log(`✅ Created ${campusData.length} campus records`, 'success');
+        }
+
+        async function initializeHouses() {
+            const houses = ['Bageshree', 'Bhairav', 'Malhar'];
+            const campuses = ['pune', 'dharamshala', 'raigarh', 'dantewada', 'kishanganj', 'jashpur', 'sarjaapura', 'himachal-bca'];
+            const colors = ['#e74c3c', '#3498db', '#2ecc71'];
+
+            const batch = db.batch();
+            let houseCount = 0;
+
+            campuses.forEach((campus, campusIndex) => {
+                houses.forEach((house, houseIndex) => {
+                    const houseId = `${campus}_${house.toLowerCase()}`;
+                    const docRef = db.collection('houses').doc(houseId);
+                    
+                    batch.set(docRef, {
+                        id: houseId,
+                        name: `${house} House`,
+                        campus: campus,
+                        campusName: campuses[campusIndex],
+                        color: colors[houseIndex],
+                        totalPoints: Math.floor(Math.random() * 500) + 200, // 200-700 points
+                        rank: (campusIndex * 3 + houseIndex + 1),
+                        trend: ['up', 'down', 'same'][Math.floor(Math.random() * 3)],
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    houseCount++;
+                });
+            });
+
+            await batch.commit();
+            log(`✅ Created ${houseCount} house records`, 'success');
+        }
+
+        async function initializeStudents() {
+            const campuses = ['pune', 'dharamshala', 'raigarh', 'dantewada', 'kishanganj', 'jashpur', 'sarjaapura', 'himachal-bca'];
+            const houses = ['bageshree', 'bhairav', 'malhar'];
+            const firstNames = ['Arjun', 'Priya', 'Rahul', 'Anjali', 'Vikram', 'Sneha', 'Aditya', 'Kavya', 'Rohit', 'Deepika'];
+            const lastNames = ['Kumar', 'Sharma', 'Patel', 'Singh', 'Gupta', 'Verma', 'Yadav', 'Mishra', 'Joshi', 'Agarwal'];
+
+            let studentCount = 0;
+            const batchSize = 50; // Firestore batch limit is 500
+            let batch = db.batch();
+
+            for (let campusIndex = 0; campusIndex < campuses.length; campusIndex++) {
+                const campus = campuses[campusIndex];
+                
+                // Create 5 students per campus
+                for (let i = 0; i < 5; i++) {
+                    const studentId = `${campus.toUpperCase()}_S${String(i + 1).padStart(3, '0')}`;
+                    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+                    const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+                    const house = houses[Math.floor(Math.random() * houses.length)];
+
+                    const academicPoints = Math.floor(Math.random() * 400) + 100; // 100-500
+                    const lifeSkillsPoints = Math.floor(Math.random() * 300) + 50; // 50-350
+                    const attendanceBonus = Math.random() > 0.7 ? 15 : 0; // 30% chance
+                    const placementBonus = Math.random() > 0.9 ? 15 : 0; // 10% chance
+                    const dropoutPenalty = Math.random() > 0.95 ? -15 : 0; // 5% chance
+
+                    const docRef = db.collection('students').doc(studentId);
+                    batch.set(docRef, {
+                        studentId,
+                        name: `${firstName} ${lastName}`,
+                        firstName,
+                        lastName,
+                        campus,
+                        house,
+                        email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${campus}.edu`,
+                        phone: `+91${Math.floor(Math.random() * 900000000) + 100000000}`,
+                        points: {
+                            academic: academicPoints,
+                            lifeSkills: lifeSkillsPoints,
+                            attendance: attendanceBonus,
+                            placement: placementBonus,
+                            dropout: dropoutPenalty
+                        },
+                        totalPoints: academicPoints + lifeSkillsPoints + attendanceBonus + placementBonus + dropoutPenalty,
+                        rank: 0, // Will be calculated later
+                        profileImage: null, // Can be added later
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    studentCount++;
+
+                    // Commit batch if we reach the limit
+                    if (studentCount % batchSize === 0) {
+                        await batch.commit();
+                        batch = db.batch();
+                    }
+                }
+            }
+
+            // Commit remaining batch
+            if (studentCount % batchSize !== 0) {
+                await batch.commit();
+            }
+
+            log(`✅ Created ${studentCount} student records`, 'success');
+        }
+
+        async function initializeRewards() {
+            const rewards = [
+                // Level 1 Rewards
+                { title: "Coffee Shop Voucher", description: "Get a free coffee from the campus café", level: 1, campus: "pune" },
+                { title: "Library Study Room", description: "Free 2-hour study room booking", level: 1, campus: "dharamshala" },
+                { title: "Campus Store Discount", description: "10% off your next campus store purchase", level: 1, campus: "raigarh" },
+                { title: "Gym Day Pass", description: "One day access to campus fitness center", level: 1, campus: "dantewada" },
+                { title: "Cultural Event Tickets", description: "Free tickets to campus cultural events", level: 1, campus: "kishanganj" },
+                
+                // Level 2 Rewards
+                { title: "Meal Plan Credit", description: "$25 credit for campus dining", level: 2, campus: "pune" },
+                { title: "Parking Pass", description: "One week free parking permit", level: 2, campus: "dharamshala" },
+                { title: "Campus Tour Guide", description: "Become a campus tour guide for visiting students", level: 2, campus: "jashpur" },
+                { title: "Mountain Trek Experience", description: "Guided mountain trekking experience", level: 2, campus: "himachal-bca" },
+                
+                // Level 3 Rewards
+                { title: "Tech Workshop Access", description: "Free access to advanced technology workshops", level: 3, campus: "sarjaapura" },
+                { title: "Mentorship Program", description: "One-on-one mentoring with industry experts", level: 3, campus: "pune" },
+                { title: "Research Project Grant", description: "$100 grant for personal research project", level: 3, campus: "raigarh" },
+                
+                // Level 4 Rewards
+                { title: "Academic Excellence Award", description: "$500 scholarship for outstanding performance", level: 4, campus: "pune" },
+                { title: "Industry Internship", description: "Guaranteed internship placement with partner company", level: 4, campus: "dharamshala" },
+                { title: "Leadership Certificate", description: "Official campus leadership recognition certificate", level: 4, campus: "raigarh" }
+            ];
+
+            const batch = db.batch();
+            rewards.forEach((reward, index) => {
+                const docRef = db.collection('rewards').doc(`reward_${index + 1}`);
+                batch.set(docRef, {
+                    id: `reward_${index + 1}`,
+                    ...reward,
+                    status: 'available',
+                    likes: Math.floor(Math.random() * 100) + 10,
+                    claimed: Math.floor(Math.random() * 20),
+                    image: null, // Can be added later
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            });
+
+            await batch.commit();
+            log(`✅ Created ${rewards.length} reward records`, 'success');
+        }
+
+        async function initializeCompetitions() {
+            const competitions = [
+                { name: "Science Fair", campus: "pune", house: "bageshree", points: 50, date: "2025-07-15" },
+                { name: "Cultural Fest", campus: "dharamshala", house: "bhairav", points: 45, date: "2025-07-20" },
+                { name: "Sports Championship", campus: "raigarh", house: "malhar", points: 60, date: "2025-07-25" },
+                { name: "Debate Competition", campus: "dantewada", house: "bageshree", points: 35, date: "2025-07-30" },
+                { name: "Art Exhibition", campus: "kishanganj", house: "bhairav", points: 40, date: "2025-08-01" }
+            ];
+
+            const batch = db.batch();
+            competitions.forEach((comp, index) => {
+                const docRef = db.collection('competitions').doc(`comp_${index + 1}`);
+                batch.set(docRef, {
+                    id: `comp_${index + 1}`,
+                    ...comp,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            });
+
+            await batch.commit();
+            log(`✅ Created ${competitions.length} competition records`, 'success');
+        }
+
+        async function clearAllData() {
+            if (!confirm('Are you sure you want to clear ALL data? This cannot be undone.')) {
+                return;
+            }
+
+            setButtonsDisabled(true);
+            log('🗑️ Clearing all data...', 'warning');
+
+            try {
+                const collections = ['campuses', 'houses', 'students', 'rewards', 'competitions', 'test'];
+                
+                for (const collectionName of collections) {
+                    const snapshot = await db.collection(collectionName).get();
+                    const batch = db.batch();
+                    
+                    snapshot.forEach(doc => {
+                        batch.delete(doc.ref);
+                    });
+                    
+                    if (!snapshot.empty) {
+                        await batch.commit();
+                        log(`✅ Cleared ${snapshot.size} documents from ${collectionName}`, 'success');
+                    }
+                }
+
+                log('✅ All data cleared successfully!', 'success');
+            } catch (error) {
+                log(`❌ Error clearing data: ${error.message}`, 'error');
+            } finally {
+                setButtonsDisabled(false);
+            }
+        }
+
+        function viewDataInConsole() {
+            window.open('https://console.firebase.google.com/project/efforts-celebrations/firestore', '_blank');
+        }
+
+        // Initialize when page loads
+        log('🔥 Firebase connected to efforts-celebrations project', 'success');
+        log('Ready to initialize your campus dashboard data!', 'info');
+    </script>
+</body>
+</html>

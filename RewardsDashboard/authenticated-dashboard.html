@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authenticated Rewards Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .auth-header {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        
+        .database-indicators {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .db-indicator {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .db-indicator.connected {
+            background: rgba(76, 175, 80, 0.8);
+        }
+        
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4CAF50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p>Authenticating and connecting to databases...</p>
+    </div>
+
+    <!-- Authentication Header -->
+    <div class="auth-header" id="auth-header" style="display: none;">
+        <div class="user-info">
+            <div class="user-avatar" id="user-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <div>
+                <div id="user-name">Loading...</div>
+                <div style="font-size: 12px; opacity: 0.8;" id="user-email">Authenticating...</div>
+            </div>
+        </div>
+        
+        <div class="database-indicators">
+            <div class="db-indicator" id="primary-indicator">
+                <i class="fas fa-database"></i> Primary
+            </div>
+            <div class="db-indicator" id="secondary-indicator">
+                <i class="fas fa-database"></i> Secondary
+            </div>
+        </div>
+        
+        <button class="logout-btn" onclick="signOut()">
+            <i class="fas fa-sign-out-alt"></i> Sign Out
+        </button>
+    </div>
+
+    <!-- Main Dashboard Content (from your existing index.html) -->
+    <div id="dashboard-content" style="display: none;">
+        <!-- Header -->
+        <header class="main-header">
+            <div class="container">
+                <h1 class="site-title">🏆 Campus Rewards Dashboard</h1>
+                <p class="site-subtitle">Celebrate achievements across all campuses</p>
+            </div>
+        </header>
+
+        <!-- Campus Filter -->
+        <section class="filter-section">
+            <div class="container">
+                <div class="filter-controls">
+                    <select id="campus-filter" class="filter-select">
+                        <option value="all">All Campuses</option>
+                    </select>
+                    <select id="level-filter" class="filter-select">
+                        <option value="all">All Levels</option>
+                        <option value="Bronze">Bronze</option>
+                        <option value="Silver">Silver</option>
+                        <option value="Gold">Gold</option>
+                        <option value="Platinum">Platinum</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Statistics -->
+        <section class="stats-section">
+            <div class="container">
+                <div class="stats-grid" id="stats-grid">
+                    <!-- Stats will be populated by JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Rewards Grid -->
+        <section class="rewards-section">
+            <div class="container">
+                <h2 class="section-title">Available Rewards</h2>
+                <div class="rewards-grid" id="rewards-grid">
+                    <!-- Rewards will be populated by JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Leaderboard -->
+        <section class="leaderboard-section">
+            <div class="container">
+                <h2 class="section-title">🏆 House Competition Leaderboard</h2>
+                <div class="leaderboard" id="leaderboard">
+                    <!-- Leaderboard will be populated by JavaScript -->
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <!-- Your existing scripts -->
+    <script src="js/multi-firebase-config.js"></script>
+    <script src="js/firebase-service.js"></script>
+    <script src="js/script.js"></script>
+
+    <script>
+        // Authentication and dashboard initialization
+        let currentUser = null;
+        let primaryDbConnected = false;
+        let secondaryDbConnected = false;
+
+        // Check authentication state
+        window.FirebaseConnections.secondary.auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUser = user;
+                await initializeAuthenticatedDashboard();
+            } else {
+                // Redirect to login if not authenticated
+                window.location.href = 'login.html';
+            }
+        });
+
+        async function initializeAuthenticatedDashboard() {
+            try {
+                // Update user info in header
+                updateUserInfo();
+                
+                // Test database connections
+                await testDatabaseConnections();
+                
+                // Initialize dashboard with authenticated access
+                await initializeDashboard();
+                
+                // Hide loading and show dashboard
+                document.getElementById('loading-overlay').style.display = 'none';
+                document.getElementById('auth-header').style.display = 'flex';
+                document.getElementById('dashboard-content').style.display = 'block';
+                
+                console.log('✅ Authenticated dashboard initialized successfully');
+                
+            } catch (error) {
+                console.error('❌ Dashboard initialization failed:', error);
+                showError('Failed to initialize dashboard. Please try refreshing the page.');
+            }
+        }
+
+        function updateUserInfo() {
+            const userAvatar = document.getElementById('user-avatar');
+            const userName = document.getElementById('user-name');
+            const userEmail = document.getElementById('user-email');
+
+            if (currentUser.photoURL) {
+                userAvatar.innerHTML = `<img src="${currentUser.photoURL}" style="width: 100%; height: 100%; border-radius: 50%;">`;
+            } else {
+                userAvatar.innerHTML = `<i class="fas fa-user"></i>`;
+            }
+
+            userName.textContent = currentUser.displayName || 'User';
+            userEmail.textContent = currentUser.email || 'Anonymous User';
+        }
+
+        async function testDatabaseConnections() {
+            const primaryIndicator = document.getElementById('primary-indicator');
+            const secondaryIndicator = document.getElementById('secondary-indicator');
+
+            try {
+                // Test primary database
+                await window.FirebaseConnections.primary.db.collection('rewards').limit(1).get();
+                primaryDbConnected = true;
+                primaryIndicator.classList.add('connected');
+                primaryIndicator.innerHTML = '<i class="fas fa-database"></i> Primary ✓';
+                console.log('✅ Primary database connected');
+            } catch (error) {
+                primaryIndicator.innerHTML = '<i class="fas fa-database"></i> Primary ✗';
+                console.error('❌ Primary database connection failed:', error);
+            }
+
+            try {
+                // Test secondary database with authentication
+                await window.FirebaseConnections.secondary.db.collection('test').limit(1).get();
+                secondaryDbConnected = true;
+                secondaryIndicator.classList.add('connected');
+                secondaryIndicator.innerHTML = '<i class="fas fa-database"></i> Secondary ✓';
+                console.log('✅ Secondary database connected');
+            } catch (error) {
+                secondaryIndicator.innerHTML = '<i class="fas fa-database"></i> Secondary ✗';
+                console.error('❌ Secondary database connection failed:', error);
+            }
+        }
+
+        async function initializeDashboard() {
+            // Initialize your existing dashboard functionality
+            // This will now have authenticated access to both databases
+            
+            // Load rewards with authenticated access
+            if (window.loadRewards) {
+                await window.loadRewards();
+            }
+            
+            // Load competitions
+            if (window.loadCompetitions) {
+                await window.loadCompetitions();
+            }
+            
+            // Update statistics
+            if (window.updateStatistics) {
+                window.updateStatistics();
+            }
+        }
+
+        function signOut() {
+            window.FirebaseConnections.secondary.auth.signOut().then(() => {
+                console.log('User signed out');
+                window.location.href = 'login.html';
+            }).catch((error) => {
+                console.error('Sign out error:', error);
+            });
+        }
+
+        function showError(message) {
+            // Show error message (you can implement this as needed)
+            alert(message);
+        }
+
+        // Export for use by other scripts
+        window.currentUser = () => currentUser;
+        window.primaryDbConnected = () => primaryDbConnected;
+        window.secondaryDbConnected = () => secondaryDbConnected;
+
+        console.log('🔥 Authenticated dashboard script loaded');
+    </script>
+</body>
+</html>

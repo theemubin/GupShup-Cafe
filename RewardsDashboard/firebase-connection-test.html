@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Database Connection Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .database-section {
+            border-left: 4px solid #4CAF50;
+        .database-section.secondary {
+            border-left-color: #2196F3;
+        }
+        .database-section.error {
+            border-left-color: #f44336;
+            background: #ffebee;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .data-table th, .data-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .data-table th {
+            background: #f5f5f5;
+        }
+        .btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #45a049;
+        }
+        .log-area {
+            background: #1e1e1e;
+            color: #fff;
+            padding: 15px;
+            border-radius: 6px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: white;
+            font-size: 12px;
+        }
+        .status-connected {
+            background: #4CAF50;
+        }
+        .status-error {
+            background: #f44336;
+        }
+        .json-data {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Firebase Database Connection Test</h1>
+        
+        <div class="card">
+            <h2>Connection Status</h2>
+            <div id="connection-status"></div>
+            <button class="btn" onclick="testConnections()">🧪 Test Connections</button>
+            <button class="btn" onclick="exploreAllData()">📊 Explore All Data</button>
+        </div>
+
+            <h2>Database Data Overview</h2>
+            <div id="data-overview"></div>
+        </div>
+
+        <div class="card">
+            <h2>Activity Log</h2>
+            <div class="log-area" id="log-area">
+                <div>🚀 Ready to test Firebase connections...</div>
+            </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <!-- Multi-Database Scripts -->
+    <script src="js/multi-firebase-config.js"></script>
+    <script src="js/connection-test.js"></script>
+
+    <script>
+        let logEntries = [];
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            logEntries.push(logEntry);
+            
+            const logArea = document.getElementById('log-area');
+            const logDiv = document.createElement('div');
+            logDiv.textContent = logEntry;
+            logDiv.style.color = type === 'error' ? '#ff6b6b' : type === 'success' ? '#51cf66' : '#fff';
+            logArea.appendChild(logDiv);
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        async function testConnections() {
+            log('🔍 Testing Firebase connections...');
+            const statusDiv = document.getElementById('connection-status');
+            statusDiv.innerHTML = '';
+
+            // Test Primary Database (efforts-celebrations)
+            await testDatabase('primary', window.FirebaseConnections.primary.db, 'efforts-celebrations');
+            
+            // Test Secondary Database (english-voult-project)
+            await testDatabase('secondary', window.FirebaseConnections.secondary.db, 'english-voult-project');
+        }
+
+        async function testDatabase(name, db, projectId) {
+            const statusDiv = document.getElementById('connection-status');
+            
+            try {
+                log(`🔌 Testing ${name} database (${projectId})...`);
+                
+                // Try to connect and list collections
+                const collections = [];
+                
+                // Test common collection names
+                const testCollections = ['rewards', 'competitions', 'users', 'students', 'courses', 'lessons', 'progress'];
+                
+                for (const collectionName of testCollections) {
+                    try {
+                        const snapshot = await db.collection(collectionName).limit(1).get();
+                        if (!snapshot.empty) {
+                            const count = await db.collection(collectionName).get().then(snap => snap.size);
+                            collections.push({
+                                name: collectionName,
+                                count: count,
+                                sampleDoc: snapshot.docs[0].data()
+                            });
+                            log(`  📁 Found collection '${collectionName}' with ${count} documents`);
+                        }
+                    } catch (collError) {
+                        // Collection doesn't exist or no permission, skip
+                    }
+                }
+
+                // Create status display
+                const dbDiv = document.createElement('div');
+                dbDiv.className = `database-section ${name}`;
+                dbDiv.innerHTML = `
+                    <h3>
+                        🗄️ ${name.toUpperCase()} DATABASE (${projectId})
+                        <span class="status-badge status-connected">CONNECTED</span>
+                    </h3>
+                    <p><strong>Collections found:</strong> ${collections.length}</p>
+                    ${collections.map(col => `
+                        <div style="margin: 10px 0; padding: 10px; background: #f9f9f9; border-radius: 4px;">
+                            <strong>📁 ${col.name}</strong> - ${col.count} documents
+                            <div class="json-data">${JSON.stringify(col.sampleDoc, null, 2)}</div>
+                        </div>
+                    `).join('')}
+                `;
+                statusDiv.appendChild(dbDiv);
+                
+                log(`✅ ${name} database connected successfully - Found ${collections.length} collections`, 'success');
+                return collections;
+
+            } catch (error) {
+                log(`❌ ${name} database connection failed: ${error.message}`, 'error');
+                
+                const errorDiv = document.createElement('div');
+                errorDiv.className = `database-section error`;
+                errorDiv.innerHTML = `
+                    <h3>
+                        🗄️ ${name.toUpperCase()} DATABASE (${projectId})
+                        <span class="status-badge status-error">ERROR</span>
+                    </h3>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p><strong>Code:</strong> ${error.code || 'Unknown'}</p>
+                `;
+                statusDiv.appendChild(errorDiv);
+                return [];
+            }
+        }
+
+        async function exploreAllData() {
+            log('📊 Exploring all available data...');
+            const overviewDiv = document.getElementById('data-overview');
+            overviewDiv.innerHTML = '<div>🔍 Scanning databases for data...</div>';
+
+            const allData = {
+                primary: await exploreDatabase('primary', window.FirebaseConnections.primary.db),
+                secondary: await exploreDatabase('secondary', window.FirebaseConnections.secondary.db)
+            };
+
+            // Display comprehensive data overview
+            overviewDiv.innerHTML = `
+                <div class="database-section">
+                    <h3>📊 PRIMARY DATABASE (efforts-celebrations)</h3>
+                    ${formatDatabaseData(allData.primary)}
+                </div>
+                <div class="database-section secondary">
+                    <h3>📊 SECONDARY DATABASE (english-voult-project)</h3>
+                    ${formatDatabaseData(allData.secondary)}
+                </div>
+            `;
+
+            log('✅ Data exploration completed', 'success');
+        }
+
+        async function exploreDatabase(dbName, db) {
+            const collections = {};
+            
+            // List of possible collections to check
+            const possibleCollections = [
+                'rewards', 'competitions', 'users', 'students', 'courses', 
+                'lessons', 'progress', 'achievements', 'leaderboard',
+                'campuses', 'houses', 'points', 'activities', 'events',
+                'content', 'vocabulary', 'grammar', 'exercises'
+            ];
+
+            for (const collectionName of possibleCollections) {
+                try {
+                    const snapshot = await db.collection(collectionName).limit(5).get();
+                    if (!snapshot.empty) {
+                        collections[collectionName] = {
+                            count: await db.collection(collectionName).get().then(snap => snap.size),
+                            samples: snapshot.docs.map(doc => ({
+                                id: doc.id,
+                                data: doc.data()
+                            }))
+                        };
+                        log(`  📁 ${dbName}: Found ${collections[collectionName].count} documents in '${collectionName}'`);
+                    }
+                } catch (error) {
+                    // Collection doesn't exist or no permission
+                }
+            }
+
+            return collections;
+        }
+
+        function formatDatabaseData(collections) {
+            if (Object.keys(collections).length === 0) {
+                return '<p>❌ No accessible collections found or database connection failed</p>';
+            }
+
+            return Object.entries(collections).map(([name, data]) => `
+                <div style="margin: 15px 0; padding: 15px; background: #f9f9f9; border-radius: 6px;">
+                    <h4>📁 ${name.toUpperCase()} (${data.count} documents)</h4>
+                    <div style="max-height: 200px; overflow-y: auto;">
+                        ${data.samples.map(sample => `
+                            <div style="margin: 10px 0; padding: 10px; background: white; border-radius: 4px; border-left: 3px solid #4CAF50;">
+                                <strong>ID:</strong> ${sample.id}<br>
+                                <div class="json-data">${JSON.stringify(sample.data, null, 2)}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Auto-test on load
+        window.addEventListener('load', () => {
+            log('🔥 Firebase connection tester loaded');
+            setTimeout(testConnections, 1000);
+        });
+    </script>
+</body>
+</html>

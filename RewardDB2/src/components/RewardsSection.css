@@ -1,0 +1,90 @@
+.rewards-section {
+  width: 100%;
+  max-width: 1200px;
+  margin: 48px auto 0 auto;
+  padding: 0 0 32px 0;
+}
+.section-header {
+  margin-bottom: 24px;
+}
+.rewards-filters {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.rewards-filter {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 8px 16px;
+  font-size: 1rem;
+}
+.rewards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+}
+.reward-card {
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  transition: box-shadow var(--transition), transform var(--transition);
+}
+.reward-card.locked { opacity: 0.55; position:relative; }
+.reward-card.locked:after { content:'Locked'; position:absolute; top:10px; right:12px; font-size:0.65rem; letter-spacing:1px; background:rgba(255,60,60,0.15); color:#ff6b6b; padding:4px 8px; border-radius:12px; }
+.reward-card.unlocked:after { content:'Unlocked'; position:absolute; top:10px; right:12px; font-size:0.65rem; letter-spacing:1px; background:rgba(0,230,210,0.12); color:#00e6d2; padding:4px 8px; border-radius:12px; }
+.reward-card:hover {
+  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.22);
+  transform: translateY(-4px) scale(1.03);
+}
+.reward-image {
+  width: 100%;
+  height: 120px;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+}
+.reward-info h4 {
+  margin: 0 0 4px 0;
+  color: var(--color-primary);
+}
+.reward-desc {
+  color: var(--color-text-muted);
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.claim-btn { background: linear-gradient(135deg,#1274d1,#0f97b7); color:#fff; border:none; padding:8px 18px; border-radius:20px; cursor:pointer; font-weight:600; font-size:0.95rem; letter-spacing:.3px; box-shadow:0 4px 18px -4px rgba(0,160,220,0.45); transition:background .25s, transform .25s, box-shadow .25s; }
+.claim-btn:hover { background:linear-gradient(135deg,#1483e8,#12b3ca); }
+.claim-btn:active { transform:translateY(1px); }
+.claim-btn:disabled { background:linear-gradient(135deg,#2d3b47,#2a3a45); color:#b5c5d3; cursor:not-allowed; box-shadow:none; opacity:.85; }
+.claim-btn[disabled][aria-pressed="true"], .claim-btn.claimed { background:linear-gradient(135deg,#1e824c,#19a06a); box-shadow:0 4px 16px -4px rgba(25,180,110,0.45); }
+.claim-btn.claimed:hover { background:linear-gradient(135deg,#23965a,#1cb278); }
+.reward-meta { font-size:0.7rem; letter-spacing:0.5px; text-transform:uppercase; color:var(--color-text-muted); margin-bottom:8px; }
+.status-unlocked { color:#1ed760; font-weight:600; }
+.status-locked { color:#ff6b6b; font-weight:600; }
+.campus-level { color:#00e6d2; }
+
+/* Popular carousel */
+.popular-carousel-wrap{margin-bottom:34px;background:#0f161d;border:1px solid #1a2733;padding:16px 18px 14px;border-radius:18px;position:relative;box-shadow:0 6px 24px -10px rgba(0,0,0,0.5);}
+.popular-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 10px 0;}
+.popular-head h3{margin:0;font-size:1rem;font-weight:600;letter-spacing:.5px;color:#d9ecff;}
+.popular-actions{display:flex;gap:6px;}
+.popular-actions button{background:#14212c;color:#b8d1e6;border:1px solid #203140;width:34px;height:34px;border-radius:10px;cursor:pointer;font-weight:600;}
+.popular-actions button:hover{background:#193043;color:#fff;}
+.popular-carousel{display:flex;gap:16px;overflow-x:auto;scrollbar-width:none;padding:4px 2px 4px 2px;}
+.popular-carousel::-webkit-scrollbar{display:none;}
+.popular-slide{min-width:210px;aspect-ratio:4/3;background:#101b24;border:1px solid #1d2d3a;border-radius:18px;overflow:hidden;position:relative;display:flex;}
+.popular-slide .reward-image{height:100%;width:100%;margin:0;}
+.popular-slide:hover{box-shadow:0 10px 34px -12px rgba(0,0,0,0.7);transform:translateY(-4px);} 
+.popular-overlay-badges{position:absolute;top:6px;left:6px;display:flex;flex-direction:column;gap:6px;z-index:2;}
+.popular-overlay-badges span{backdrop-filter:blur(4px);background:rgba(15,25,35,0.6);color:#e6f6ff;font-size:.55rem;font-weight:600;padding:4px 7px;border-radius:8px;letter-spacing:.6px;box-shadow:0 2px 6px -2px rgba(0,0,0,0.6);} 
+.popular-campus-badge{background:linear-gradient(135deg,#1a5fa3,#0b82b3);} 
+.popular-level-badge{background:linear-gradient(135deg,#4d3ca3,#7049c2);} 
+.popular-likes-badge{background:linear-gradient(135deg,#ff7b4f,#ff3d6a);} 
+@media (max-width:600px){ .popular-slide{min-width:180px;} }

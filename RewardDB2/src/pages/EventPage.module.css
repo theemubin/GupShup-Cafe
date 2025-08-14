@@ -1,0 +1,510 @@
+.eventPageContainer {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 2.5rem;
+  max-width: 1300px;
+  margin: 3.5rem auto;
+  background: rgba(18, 18, 18, 0.98);
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 32px 0 rgba(0,0,0,0.18);
+  padding: 2.5rem 2rem;
+  color: #e0e0e0;
+}
+
+.sidebar {
+  background: #181818;
+  border-radius: 1.2rem;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.14);
+  padding: 2rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.2rem;
+  min-width: 220px;
+  align-items: stretch;
+}
+.sidebarUser {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7em;
+  font-size: 1.1em;
+  color: #1ed760;
+  margin-bottom: 1.2em;
+}
+.sidebarUserName {
+  font-weight: 700;
+  color: #fff;
+  font-size: 1.08em;
+}
+.sidebarSection {
+  margin-bottom: 1.5em;
+}
+.sidebarSection h4 {
+  color: #00e6d2;
+  font-size: 1.1rem;
+  margin-bottom: 0.7em;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+.sidebarEventList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.sidebarEventList li {
+  padding: 0.5em 0.7em;
+  border-radius: 0.5em;
+  cursor: pointer;
+  color: #b0b0b0;
+  margin-bottom: 0.3em;
+  transition: background 0.15s, color 0.15s;
+}
+.sidebarEventList li.active, .sidebarEventList li:hover {
+  background: #232323;
+  color: #00e6d2;
+  font-weight: 600;
+}
+.sidebarGalleryPreview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+.galleryThumb {
+  border-radius: 0.5em;
+  overflow: hidden;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.10);
+  background: #232323;
+}
+.mainContent {
+  flex: 1 1 0;
+  padding-left: 1.5rem;
+}
+.pageTitle {
+  font-size: 2.7rem;
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  color: #00e6d2;
+  margin-bottom: 0.5rem;
+}
+.pageSubtitle {
+  color: #b0b0b0;
+  font-size: 1.2rem;
+  margin-bottom: 1.5rem;
+}
+.addEventForm {
+  background: #232323;
+  border-radius: 1rem;
+  padding: 1.5rem 1.2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+  display: flex;
+  flex-direction: column;
+  gap: 0.7em;
+}
+.addEventTitle {
+  color: #1ed760;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 0.7em;
+}
+.eventInput, .eventTextarea {
+  background: #181818;
+  color: #e0e0e0;
+  border: 1px solid #333;
+  border-radius: 0.6em;
+  padding: 0.6em 1em;
+  font-size: 1em;
+  font-family: inherit;
+  resize: none;
+}
+.eventTextarea {
+  min-height: 2.2em;
+}
+.eventBtn {
+  background: linear-gradient(90deg, #00e6d2 0%, #1ed760 100%);
+  color: #111;
+  font-weight: 700;
+  border: none;
+  border-radius: 2em;
+  padding: 0.6em 1.5em;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+  margin-top: 0.5em;
+}
+.eventBtn:hover {
+  background: linear-gradient(90deg, #1ed760 0%, #00e6d2 100%);
+  color: #fff;
+}
+.filterBar {
+  display: flex;
+  justify-content: center;
+  gap: 1.2rem;
+  margin-bottom: 1.5rem;
+}
+.filterBtn {
+  background: #232323;
+  color: #b0b0b0;
+  border: none;
+  border-radius: 2em;
+  padding: 0.6em 1.5em;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+}
+.filterBtn:hover {
+  background: #00e6d2;
+  color: #111;
+}
+.activeFilter {
+  background: linear-gradient(90deg, #00e6d2 0%, #1ed760 100%);
+  color: #111;
+  font-weight: 700;
+}
+.eventGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2.5rem;
+}
+.eventCard {
+  background: #181818;
+  border-radius: 1.2rem;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.14);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.18s, box-shadow 0.18s;
+  cursor: pointer;
+}
+.eventCard:hover {
+  transform: translateY(-6px) scale(1.03);
+  box-shadow: 0 6px 32px #00e6d2a0;
+}
+.eventCardImageWrap {
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+  background: #222;
+}
+.eventCardImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 1.2rem 1.2rem 0 0;
+}
+.eventCardContent {
+  padding: 1.2rem 1.2rem 1.2rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+.eventCardMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  color: #1ed760;
+  font-size: 1em;
+  margin-bottom: 0.3em;
+}
+.eventTags, .modalTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  margin-bottom: 0.7em;
+}
+.eventTag {
+  background: #00e6d2;
+  color: #111;
+  border-radius: 2em;
+  padding: 0.2em 1em;
+  font-size: 0.98em;
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+  font-weight: 600;
+}
+.eventCardActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1em;
+}
+.readMoreBtn {
+  background: none;
+  color: #00e6d2;
+  border: none;
+  font-weight: 700;
+  font-size: 1em;
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+  cursor: pointer;
+  transition: color 0.18s;
+}
+.readMoreBtn:hover {
+  color: #1ed760;
+}
+.noEventsMsg {
+  color: #b0b0b0;
+  text-align: center;
+  font-size: 1.2em;
+  margin: 2em 0;
+}
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modalContent {
+  background: #181818;
+  border-radius: 1.5rem;
+  box-shadow: 0 8px 48px rgba(0,0,0,0.25);
+  max-width: 540px;
+  width: 100%;
+  padding: 2.5rem 2rem;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.modalHeroImage {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  border-radius: 1.2em;
+  margin-bottom: 1.5em;
+  background: #222;
+}
+.modalTitle {
+  color: #00e6d2;
+  font-size: 2rem;
+  font-weight: 900;
+  margin-bottom: 0.5em;
+  text-align: center;
+}
+.modalDate {
+  color: #1ed760;
+  font-size: 1.08em;
+  margin-bottom: 1em;
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+}
+.modalDesc {
+  color: #e0e0e0;
+  font-size: 1.1em;
+  margin-bottom: 1.2em;
+  text-align: center;
+}
+.closeModalBtn {
+  background: linear-gradient(90deg, #00e6d2 0%, #1ed760 100%);
+  color: #111;
+  font-weight: 700;
+  border: none;
+  border-radius: 2em;
+  padding: 0.7em 2em;
+  font-size: 1.08em;
+  margin-top: 1.2em;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+}
+.closeModalBtn:hover {
+  background: linear-gradient(90deg, #1ed760 0%, #00e6d2 100%);
+  color: #fff;
+}
+.imageOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.55), rgba(0,0,0,0.05));
+  pointer-events: none;
+}
+.cardTopMeta {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  gap: 0.5em;
+}
+.typeBadge {
+  background: rgba(0,230,210,0.9);
+  color: #111;
+  font-weight: 700;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  padding: 0.35em 0.6em;
+  border-radius: 0.4em;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+.eventDescClamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 3.6em;
+}
+.eventTagBtn {
+  background: #00e6d2;
+  color: #111;
+  border: none;
+  border-radius: 2em;
+  padding: 0.25em 0.9em;
+  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.eventTagBtn:hover {
+  background: #1ed760;
+}
+.shareBtn {
+  background: #232323;
+  color: #b0b0b0;
+  border: 1px solid #2e2e2e;
+  border-radius: 2em;
+  padding: 0.4em 1em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.shareBtn:hover {
+  background: #00e6d2;
+  color: #111;
+}
+.skeletonCard {
+  background: #181818;
+  border-radius: 1.2rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: pulse 1.8s ease-in-out infinite;
+}
+.skeletonImage {
+  height: 180px;
+  background: linear-gradient(90deg,#222 0%,#2c2c2c 50%,#222 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s linear infinite;
+}
+.skeletonBody { padding: 1rem; }
+.skeletonLine {
+  height: 12px;
+  background: #262626;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  width: 100%;
+}
+.skeletonLine:nth-child(2) { width: 70%; }
+.skeletonTagRow { display: flex; gap: 0.5em; margin-top: 0.4em; }
+.skeletonTag { height: 18px; width: 50px; background: #262626; border-radius: 999px; }
+@keyframes shimmer {
+  0% { background-position: 0% 0%; }
+  100% { background-position: -200% 0%; }
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+.modalActions {
+  display: flex;
+  gap: 0.8rem;
+  margin-top: 0.8rem;
+}
+.noEventsCta { margin-top: 0.8rem; font-size: 0.9em; color: #1ed760; }
+@media (max-width: 1100px) {
+  .eventPageContainer {
+    grid-template-columns: 1fr;
+    padding: 1.2rem 0.5rem;
+    margin: 2rem 0;
+  }
+  .sidebar {
+    flex-direction: row;
+    gap: 1.2rem;
+    min-width: 0;
+    padding: 1rem 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .mainContent {
+    padding-left: 0;
+  }
+  .eventDetailHeader {
+    flex-direction: column;
+    gap: 1.2rem;
+  }
+  .eventGalleryFeatured {
+    max-width: 100%;
+    min-width: 0;
+  }
+  .eventDetailInfo {
+    padding-left: 0;
+  }
+}
+@media (max-width: 900px) {
+  .event-page-container {
+    grid-template-columns: 1fr;
+    padding: 1.2rem 0.5rem;
+    margin: 2rem 0;
+  }
+  .sidebar {
+    flex-direction: row;
+    gap: 1.2rem;
+    min-width: 0;
+    padding: 1rem 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .mainContent {
+    padding-left: 0;
+  }
+  .eventGrid {
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+  }
+  .modalContent {
+    padding: 1.2rem 0.5rem;
+  }
+}
+@media (max-width: 600px) {
+  .eventPageContainer {
+    padding: 0.5rem 0.1rem;
+    margin: 1rem 0;
+  }
+  .eventList {
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+  .eventCard {
+    min-width: 0;
+    width: 100%;
+    padding: 0;
+  }
+  .eventCardImageWrap {
+    height: 80px;
+  }
+  .eventGalleryFeatured iframe {
+    height: 180px !important;
+  }
+  .heroImagePreview {
+    max-width: 98vw;
+    max-height: 120px;
+  }
+  .eventHeroImage {
+    height: 120px;
+  }
+  .heroSection {
+    margin-bottom: 1.2rem;
+  }
+  .pageTitle {
+    font-size: 1.5rem;
+  }
+  .modalHeroImage {
+    height: 120px;
+  }
+}

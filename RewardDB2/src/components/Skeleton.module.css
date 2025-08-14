@@ -1,0 +1,18 @@
+.skeleton {
+  background: linear-gradient(90deg, #1a2733 25%, #22384a 50%, #1a2733 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.2s infinite linear;
+  border-radius: 8px;
+  min-height: 16px;
+  min-width: 40px;
+  display: inline-block;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
