@@ -22,7 +22,7 @@
 
 ```
 Name: ai-roundtable-backend
-Root Directory: server
+Root Directory: ai-roundtable-platform/server
 Runtime: Node
 Build Command: npm install
 Start Command: npm start
@@ -55,7 +55,7 @@ HUGGINGFACE_API_KEY=your_api_key_here
 
 ```
 Framework Preset: Vite
-Root Directory: client
+Root Directory: ai-roundtable-platform/client
 Build Command: npm run build
 Output Directory: dist
 Install Command: npm install
