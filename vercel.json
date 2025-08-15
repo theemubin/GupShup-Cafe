@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "gupshup-cafe-frontend",
+  "env": {
+    "VITE_API_URL": "https://gupshup-cafe.onrender.com",
+    "VITE_SOCKET_URL": "https://gupshup-cafe.onrender.com",
+    "VITE_ENABLE_AI_TOPICS": "true",
+    "VITE_ENABLE_AUDIO": "true"
+  }
+}
