@@ -40,11 +40,11 @@ git push -u gupshup main
 
 ### Step 2: Deploy Backend Service
 1. Click **"New +"** → **"Web Service"**
-2. Connect your GitHub repository: `theemubin/AI-Gupshup`
+2. Connect your GitHub repository: `theemubin/GupShup-Cafe`
 3. Configure deployment settings:
 
 ```
-Name: ai-gupshup-backend
+Name: gupshup-cafe-backend
 Root Directory: server
 Runtime: Node
 Build Command: npm install
@@ -62,7 +62,7 @@ HUGGINGFACE_API_KEY=your_api_key_here
 ### Step 4: Deploy
 - Click **"Create Web Service"**
 - Wait 3-5 minutes for deployment
-- Copy your backend URL (e.g., `https://ai-gupshup-backend.onrender.com`)
+- Copy your backend URL (e.g., `https://gupshup-cafe-backend.onrender.com`)
 
 ## 🌐 Deploy Frontend to Vercel (FREE)
 
@@ -73,7 +73,7 @@ HUGGINGFACE_API_KEY=your_api_key_here
 
 ### Step 2: Deploy Frontend
 1. Click **"New Project"**
-2. Import `theemubin/AI-Gupshup`
+2. Import `theemubin/GupShup-Cafe`
 3. Configure settings:
 
 ```
@@ -93,14 +93,14 @@ VITE_API_URL=https://your-render-backend-url.onrender.com
 ### Step 4: Deploy
 - Click **"Deploy"**
 - Wait 2-3 minutes
-- Your frontend will be live at `https://ai-gupshup.vercel.app`
+- Your frontend will be live at `https://gupshup-cafe.vercel.app`
 
 ## 🎯 Final Configuration
 
 ### Update Backend CORS
 After frontend deployment, update your backend environment:
 ```
-CORS_ORIGIN=https://ai-gupshup.vercel.app
+CORS_ORIGIN=https://gupshup-cafe.vercel.app
 ```
 
 ### Test Your Deployment
@@ -117,8 +117,8 @@ CORS_ORIGIN=https://ai-gupshup.vercel.app
 - **Voice Not Working**: Ensure HTTPS is enabled (automatic)
 
 ### Health Check URLs:
-- Backend: `https://ai-gupshup-backend.onrender.com/health`
-- Frontend: `https://ai-gupshup.vercel.app`
+- Backend: `https://gupshup-cafe-backend.onrender.com/health`
+- Frontend: `https://gupshup-cafe.vercel.app`
 
 ## 📱 Your Live App Features
 - ✅ Real-time roundtable discussions
@@ -131,8 +131,8 @@ CORS_ORIGIN=https://ai-gupshup.vercel.app
 ## 🎉 Success!
 Your AI Gupshup Platform is now live and accessible worldwide!
 
-**Frontend**: https://ai-gupshup.vercel.app
-**Backend**: https://ai-gupshup-backend.onrender.com
-**GitHub**: https://github.com/theemubin/AI-Gupshup
+**Frontend**: https://gupshup-cafe.vercel.app
+**Backend**: https://gupshup-cafe-backend.onrender.com
+**GitHub**: https://github.com/theemubin/GupShup-Cafe
 
 Share your platform with educators and students around the world! 🌍

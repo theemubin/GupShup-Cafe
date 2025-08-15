@@ -59,6 +59,6 @@ See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for detailed deployment instruc
 ## 📄 License
 Open source - see individual files for specific licensing.
 
-## 🌍 Coming Soon
-This platform will be available as a dedicated repository at:
-**https://github.com/theemubin/AI-Gupshup**
+## 🌍 Live Repository
+This platform is available as a dedicated repository at:
+**https://github.com/theemubin/GupShup-Cafe**
