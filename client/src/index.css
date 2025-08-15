@@ -48,7 +48,7 @@
   
   .roundtable {
     @apply relative w-80 h-80 bg-amber-800 rounded-full border-8 border-amber-900
-           shadow-2xl flex items-center justify-center group
+           shadow-2xl flex items-center justify-center
            md:w-96 md:h-96 lg:w-[32rem] lg:h-[32rem];
   }
   
