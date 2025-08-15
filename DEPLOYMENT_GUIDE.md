@@ -1,12 +1,35 @@
-# 🚀 AI Roundtable Platform - Deployment Guide
+# 🚀 AI Gupshup Platform - Deployment Guide
 
 ## 📋 Quick Deploy Checklist
 
-### ✅ Prerequisites Completed
-- [x] Code pushed to GitHub: https://github.com/theemubin/RoughH
+### ✅ Prerequisites 
+- [x] Code ready for deployment
 - [x] Enhanced CSS with animations and responsive design
 - [x] Environment files configured
-- [x] Documentation ready
+- [x] Documentation complete
+
+## 📦 Create Dedicated Repository
+
+### Step 1: Create New Repository
+1. Go to **[github.com/theemubin](https://github.com/theemubin)**
+2. Click **"New repository"**
+3. Configure:
+   ```
+   Repository name: AI-Gupshup
+   Description: AI-powered educational roundtable discussion platform
+   Visibility: Public (for open source)
+   Initialize: Don't add README (we have one)
+   ```
+4. Click **"Create repository"**
+
+### Step 2: Push Code to New Repository
+```bash
+# Add new remote for dedicated repository
+git remote add gupshup https://github.com/theemubin/AI-Gupshup.git
+
+# Push to new repository
+git push -u gupshup main
+```
 
 ## 🔥 Deploy Backend to Render (FREE)
 
@@ -17,11 +40,11 @@
 
 ### Step 2: Deploy Backend Service
 1. Click **"New +"** → **"Web Service"**
-2. Connect your GitHub repository: `theemubin/RoughH`
+2. Connect your GitHub repository: `theemubin/AI-Gupshup`
 3. Configure deployment settings:
 
 ```
-Name: ai-roundtable-backend
+Name: ai-gupshup-backend
 Root Directory: server
 Runtime: Node
 Build Command: npm install
@@ -39,7 +62,7 @@ HUGGINGFACE_API_KEY=your_api_key_here
 ### Step 4: Deploy
 - Click **"Create Web Service"**
 - Wait 3-5 minutes for deployment
-- Copy your backend URL (e.g., `https://ai-roundtable-backend.onrender.com`)
+- Copy your backend URL (e.g., `https://ai-gupshup-backend.onrender.com`)
 
 ## 🌐 Deploy Frontend to Vercel (FREE)
 
@@ -50,7 +73,7 @@ HUGGINGFACE_API_KEY=your_api_key_here
 
 ### Step 2: Deploy Frontend
 1. Click **"New Project"**
-2. Import `theemubin/RoughH`
+2. Import `theemubin/AI-Gupshup`
 3. Configure settings:
 
 ```
@@ -70,14 +93,14 @@ VITE_API_URL=https://your-render-backend-url.onrender.com
 ### Step 4: Deploy
 - Click **"Deploy"**
 - Wait 2-3 minutes
-- Your frontend will be live at `https://your-project.vercel.app`
+- Your frontend will be live at `https://ai-gupshup.vercel.app`
 
 ## 🎯 Final Configuration
 
 ### Update Backend CORS
 After frontend deployment, update your backend environment:
 ```
-CORS_ORIGIN=https://your-vercel-app.vercel.app
+CORS_ORIGIN=https://ai-gupshup.vercel.app
 ```
 
 ### Test Your Deployment
@@ -94,8 +117,8 @@ CORS_ORIGIN=https://your-vercel-app.vercel.app
 - **Voice Not Working**: Ensure HTTPS is enabled (automatic)
 
 ### Health Check URLs:
-- Backend: `https://your-backend.onrender.com/health`
-- Frontend: `https://your-frontend.vercel.app`
+- Backend: `https://ai-gupshup-backend.onrender.com/health`
+- Frontend: `https://ai-gupshup.vercel.app`
 
 ## 📱 Your Live App Features
 - ✅ Real-time roundtable discussions
@@ -106,10 +129,10 @@ CORS_ORIGIN=https://your-vercel-app.vercel.app
 - ✅ 100% free hosting
 
 ## 🎉 Success!
-Your AI Roundtable Platform is now live and accessible worldwide!
+Your AI Gupshup Platform is now live and accessible worldwide!
 
-**Frontend**: https://your-project.vercel.app
-**Backend**: https://your-backend.onrender.com
-**GitHub**: https://github.com/theemubin/RoughH
+**Frontend**: https://ai-gupshup.vercel.app
+**Backend**: https://ai-gupshup-backend.onrender.com
+**GitHub**: https://github.com/theemubin/AI-Gupshup
 
 Share your platform with educators and students around the world! 🌍

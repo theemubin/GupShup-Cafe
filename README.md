@@ -1,4 +1,4 @@
-# 🎯 AI Roundtable Platform
+# 🎯 AI Gupshup Platform
 
 A **full-stack educational web application** for AI-powered roundtable discussions.
 
@@ -39,7 +39,7 @@ npm run dev
 - **Backend**: http://localhost:3002
 
 ## 🌐 Deployment
-See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for detailed deployment instructions to Vercel and Render.
+See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for detailed deployment instructions to create a dedicated repository and deploy to Vercel and Render.
 
 ## 📁 Project Structure
 ```
@@ -49,10 +49,16 @@ See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for detailed deployment instruc
 └── README.md       # This file
 ```
 
-## 🗃️ Other Projects in Workspace
-- **RewardDB2/**: Rewards database application
-- **RewardsDashboard/**: Dashboard for rewards system  
-- **english-tool-vault/**: English learning tools
+## 🎓 Educational Use Cases
+- **Virtual Classrooms**: Structured online discussions
+- **Debate Practice**: Turn-based speaking with timers
+- **Language Learning**: Conversation practice with AI topics
+- **Workshop Facilitation**: Guided group discussions
+- **Student Presentations**: Organized speaking turns
 
 ## 📄 License
 Open source - see individual files for specific licensing.
+
+## 🌍 Coming Soon
+This platform will be available as a dedicated repository at:
+**https://github.com/theemubin/AI-Gupshup**
