@@ -7,7 +7,7 @@ import { Users, Clock, Mic, MicOff, LogOut, Settings } from 'lucide-react'
 
 /**
  * Lobby Page Component
- * Waiting area until minimum participants (2) join the session
+ * Waiting area until minimum participants (1+) join the session
  */
 function LobbyPage() {
   const navigate = useNavigate()
@@ -46,10 +46,10 @@ function LobbyPage() {
     socket.on('participants-update', (updatedParticipants) => {
       setParticipants(updatedParticipants)
       
-      if (updatedParticipants.length >= 2) {
+      if (updatedParticipants.length >= 1) {
         setSystemMessage('Ready to start! Click "Ready" when you want to begin.')
       } else {
-        setSystemMessage(`Waiting for more participants... (${updatedParticipants.length}/2 minimum)`)
+        setSystemMessage('Connecting to discussion room...')
       }
     })
 

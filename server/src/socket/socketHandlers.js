@@ -214,7 +214,7 @@ export function setupSocketHandlers(io) {
       
       const participants = room.participants
       const readyCount = participants.filter(p => p.isReady).length
-      const minParticipants = parseInt(process.env.MIN_PARTICIPANTS) || 2
+      const minParticipants = parseInt(process.env.MIN_PARTICIPANTS) || 1
       
       // Check if we have enough ready participants
       if (participants.length >= minParticipants && readyCount >= minParticipants && !room.discussion.active) {
@@ -368,7 +368,7 @@ export function setupSocketHandlers(io) {
       if (!room || !room.discussion.active) return
       
       const participants = room.participants
-      const minParticipants = parseInt(process.env.MIN_PARTICIPANTS) || 2
+      const minParticipants = parseInt(process.env.MIN_PARTICIPANTS) || 1
       
       // End discussion if not enough participants
       if (participants.length < minParticipants) {

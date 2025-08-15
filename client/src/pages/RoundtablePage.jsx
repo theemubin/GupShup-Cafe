@@ -87,8 +87,8 @@ function RoundtablePage() {
     socket.on('user-disconnected', ({ userId, participants: updatedParticipants }) => {
       setParticipants(updatedParticipants)
       
-      // If discussion has too few people, redirect back to lobby
-      if (updatedParticipants.length < 2) {
+      // If discussion has no participants, redirect back to lobby
+      if (updatedParticipants.length < 1) {
         setTimeout(() => {
           navigate('/lobby')
         }, 3000)

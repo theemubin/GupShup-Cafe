@@ -114,7 +114,7 @@ function RoundtableView({ participants, currentSpeaker, currentTopic, discussion
             <div className="text-center">
               <Brain className="w-12 h-12 text-gray-400 mx-auto mb-2" />
               <p className="text-gray-500 text-sm">
-                {participants.length < 2 
+                {participants.length < 1 
                   ? 'Waiting for participants...' 
                   : 'Preparing discussion...'}
               </p>
