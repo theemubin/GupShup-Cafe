@@ -22,6 +22,7 @@ function LobbyPage() {
   
   const [participants, setParticipants] = useState([])
   const [roomId, setRoomId] = useState('general')
+  const [minParticipants, setMinParticipants] = useState(1)
   const [isReady, setIsReady] = useState(false)
   const [waitingTime, setWaitingTime] = useState(0)
   const [systemMessage, setSystemMessage] = useState('Connecting to lobby...')
@@ -81,6 +82,22 @@ function LobbyPage() {
     }
   }, [socket, joinRoom, roomId, navigate])
 
+  // Fetch server-side configuration (minParticipants, etc.)
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const res = await fetch('/api/config')
+        const json = await res.json()
+        const serverMin = json?.data?.minParticipants
+        if (serverMin && Number.isFinite(serverMin)) setMinParticipants(serverMin)
+      } catch (err) {
+        console.warn('Failed to fetch server config, using defaults', err)
+      }
+    }
+
+    fetchConfig()
+  }, [])
+
   /**
    * Format waiting time as MM:SS
    */
@@ -94,7 +111,7 @@ function LobbyPage() {
    * Handle ready button click
    */
   const handleReady = () => {
-    if (participants.length >= 2 && audioEnabled) {
+    if (participants.length >= minParticipants && audioEnabled) {
       setIsReady(true)
       signalReady()
     }
@@ -120,7 +137,7 @@ function LobbyPage() {
     navigate('/')
   }
 
-  const canStart = participants.length >= 2 && audioEnabled
+  const canStart = participants.length >= minParticipants && audioEnabled
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -181,7 +198,7 @@ function LobbyPage() {
                   <span className={`font-semibold ${
                     participants.length >= 2 ? 'text-green-600' : 'text-orange-600'
                   }`}>
-                    {participants.length}/2+ required
+                    {participants.length}/{minParticipants}+ required
                   </span>
                 </div>
                 

@@ -202,6 +202,37 @@ export function setupSocketHandlers(io) {
         console.error('Error handling disconnect:', error)
       }
     })
+
+      /**
+       * Simple WebRTC signaling passthrough
+       * These events relay SDP and ICE messages to the intended peer socket id
+       */
+      socket.on('webrtc-offer', ({ to, sdp }) => {
+        try {
+          if (!to) return
+          io.to(to).emit('webrtc-offer', { from: socket.id, sdp })
+        } catch (err) {
+          console.error('Error relaying webrtc-offer:', err)
+        }
+      })
+
+      socket.on('webrtc-answer', ({ to, sdp }) => {
+        try {
+          if (!to) return
+          io.to(to).emit('webrtc-answer', { from: socket.id, sdp })
+        } catch (err) {
+          console.error('Error relaying webrtc-answer:', err)
+        }
+      })
+
+      socket.on('webrtc-ice-candidate', ({ to, candidate }) => {
+        try {
+          if (!to) return
+          io.to(to).emit('webrtc-ice-candidate', { from: socket.id, candidate })
+        } catch (err) {
+          console.error('Error relaying ice candidate:', err)
+        }
+      })
   })
 
   /**

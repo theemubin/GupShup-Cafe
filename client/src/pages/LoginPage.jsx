@@ -261,9 +261,9 @@ function LoginPage() {
             <div className="mt-2">
               <p className="text-xs text-gray-500 mb-1">Suggestions:</p>
               <div className="flex flex-wrap gap-1">
-                {suggestions.map((suggestion) => (
+                {suggestions.map((suggestion, idx) => (
                   <button
-                    key={suggestion}
+                    key={suggestion + '-' + idx}
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, anonymousName: suggestion }))}
                     className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded transition-colors"

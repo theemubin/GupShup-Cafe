@@ -28,8 +28,8 @@ const app = express()
 const server = createServer(app)
 
 // Configuration
-const PORT = process.env.PORT || 3001
-const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173']
+const PORT = process.env.PORT || 3002
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173', 'http://localhost:5174']
 
 // Socket.io setup with CORS
 const io = new Server(server, {
@@ -46,7 +46,15 @@ app.use(helmet({
 }))
 
 app.use(cors({
-  origin: ALLOWED_ORIGINS,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    if (ALLOWED_ORIGINS.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }))
 

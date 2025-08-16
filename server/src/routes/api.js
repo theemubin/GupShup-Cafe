@@ -201,7 +201,7 @@ router.post('/feedback', (req, res) => {
 router.get('/config', (req, res) => {
   try {
     const config = {
-      minParticipants: parseInt(process.env.MIN_PARTICIPANTS) || 2,
+      minParticipants: parseInt(process.env.MIN_PARTICIPANTS) || 1,
       maxParticipants: parseInt(process.env.MAX_PARTICIPANTS) || 8,
       defaultSpeakingTime: parseInt(process.env.DEFAULT_SPEAKING_TIME) || 60,
       features: {

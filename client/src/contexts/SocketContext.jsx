@@ -21,8 +21,9 @@ export function SocketProvider({ children }) {
   useEffect(() => {
     // Only connect if user is authenticated
     if (isAuthenticated && user && anonymousName) {
-      const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001'
-      
+      // Use deployed backend URL for production, fallback to localhost for dev
+  const socketUrl = 'https://gupshup-cafe.onrender.com';
+
       // Create socket connection
       const newSocket = io(socketUrl, {
         auth: {
@@ -38,11 +39,13 @@ export function SocketProvider({ children }) {
       newSocket.on('connect', () => {
         console.log('Connected to server:', newSocket.id)
         setConnected(true)
+  try { window.__GUPSHUP_SOCKET = newSocket } catch(e) {}
       })
 
       newSocket.on('disconnect', () => {
         console.log('Disconnected from server')
         setConnected(false)
+  try { window.__GUPSHUP_SOCKET = null } catch(e) {}
       })
 
       newSocket.on('connect_error', (error) => {

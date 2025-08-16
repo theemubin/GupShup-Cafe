@@ -17,6 +17,7 @@ export function AudioProvider({ children }) {
   const [localStream, setLocalStream] = useState(null)
   const [isMuted, setIsMuted] = useState(true)
   const [audioLevel, setAudioLevel] = useState(0)
+  const [peers, setPeers] = useState({}) // map socketId -> RTCPeerConnection
 
   /**
    * Request microphone permission and get audio stream
@@ -37,6 +38,17 @@ export function AudioProvider({ children }) {
       
       // Set up audio level monitoring
       setupAudioLevelMonitoring(stream)
+
+      // If we have a socket connection, start signaling to peers
+      // We'll emit a simple 'ready-for-webrtc' event so other peers can initiate
+      try {
+        const socket = window.__GUPSHUP_SOCKET
+        if (socket && socket.connected) {
+          socket.emit('ready-for-webrtc')
+        }
+      } catch (e) {
+        // ignore
+      }
       
       return stream
     } catch (error) {
@@ -89,6 +101,112 @@ export function AudioProvider({ children }) {
       setIsMuted(!isMuted)
     }
   }
+
+  /**
+   * Setup handlers to create/accept peer connections using Socket.io for signaling
+   * This function expects `socket` to be available globally via window.__GUPSHUP_SOCKET
+   */
+  const setupPeerSignaling = (socket) => {
+    if (!socket) return
+
+    // Handle incoming offers
+    socket.on('webrtc-offer', async ({ from, sdp }) => {
+      try {
+        if (!localStream) return
+        const pc = createPeerConnection(from, socket)
+        await pc.setRemoteDescription({ type: 'offer', sdp })
+        const answer = await pc.createAnswer()
+        await pc.setLocalDescription(answer)
+        socket.emit('webrtc-answer', { to: from, sdp: answer.sdp })
+      } catch (err) {
+        console.error('Error handling webrtc-offer:', err)
+      }
+    })
+
+    // Handle incoming answers
+    socket.on('webrtc-answer', async ({ from, sdp }) => {
+      try {
+        const pc = peers[from]
+        if (!pc) return
+        await pc.setRemoteDescription({ type: 'answer', sdp })
+      } catch (err) {
+        console.error('Error handling webrtc-answer:', err)
+      }
+    })
+
+    // Handle ICE candidates
+    socket.on('webrtc-ice-candidate', async ({ from, candidate }) => {
+      try {
+        const pc = peers[from]
+        if (!pc || !candidate) return
+        await pc.addIceCandidate(candidate)
+      } catch (err) {
+        console.error('Error adding remote ICE candidate:', err)
+      }
+    })
+
+    // When a new participant list arrives, attempt to establish peer connections
+    socket.on('participants-update', (updatedParticipants) => {
+      try {
+        const otherPeers = updatedParticipants.filter(p => p.socketId && p.socketId !== socket.id)
+        otherPeers.forEach(p => {
+          if (!peers[p.socketId] && localStream) {
+            // create an offer to this peer
+            const pc = createPeerConnection(p.socketId, socket)
+            pc.addStream && pc.addStream(localStream)
+            // modern API
+            try {
+              localStream.getTracks().forEach(track => pc.addTrack(track, localStream))
+            } catch (e) {
+              // ignore if addTrack not available
+            }
+            pc.createOffer().then(offer => pc.setLocalDescription(offer).then(() => {
+              socket.emit('webrtc-offer', { to: p.socketId, sdp: offer.sdp })
+            }))
+          }
+        })
+      } catch (err) {
+        console.error('Error during participants-update handling for WebRTC:', err)
+      }
+    })
+  }
+
+  const createPeerConnection = (peerSocketId, socket) => {
+    const iceServers = [{ urls: 'stun:stun.l.google.com:19302' }]
+    const pc = new RTCPeerConnection({ iceServers })
+
+    // send local ICE candidates to the peer via server
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        socket.emit('webrtc-ice-candidate', { to: peerSocketId, candidate: event.candidate })
+      }
+    }
+
+    // play remote tracks
+    pc.ontrack = (event) => {
+      try {
+        const remoteStream = event.streams && event.streams[0]
+        if (remoteStream) {
+          // attach to an audio element and autoplay
+          let audioEl = document.getElementById(`remote_audio_${peerSocketId}`)
+          if (!audioEl) {
+            audioEl = document.createElement('audio')
+            audioEl.id = `remote_audio_${peerSocketId}`
+            audioEl.autoplay = true
+            document.body.appendChild(audioEl)
+          }
+          audioEl.srcObject = remoteStream
+        }
+      } catch (err) {
+        console.error('Error handling ontrack event:', err)
+      }
+    }
+
+    // store pc
+    setPeers(prev => ({ ...prev, [peerSocketId]: pc }))
+    return pc
+  }
+
 
   /**
    * Stop audio stream and cleanup
