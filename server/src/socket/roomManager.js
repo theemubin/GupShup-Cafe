@@ -4,6 +4,8 @@
  */
 
 export class RoomManager {
+  // Internal flag to prevent cleanup during addUserToRoom
+  _skipCleanup = false;
   constructor() {
     this.rooms = new Map()
   }
@@ -42,10 +44,11 @@ export class RoomManager {
    */
   addUserToRoom(roomId, userData) {
     const room = this.getRoom(roomId)
-    
     // Remove user if already in room (reconnection)
-    this.removeUserFromRoom(roomId, userData.id)
-    
+  const wasInRoom = room.participants.some(p => p.id === userData.id);
+  this._skipCleanup = true;
+  this.removeUserFromRoom(roomId, userData.id);
+  this._skipCleanup = false;
     // Add user to room
     room.participants.push({
       id: userData.id,
@@ -57,8 +60,8 @@ export class RoomManager {
       isReady: userData.isReady || false,
       joinedAt: userData.joinedAt || new Date()
     })
-
     console.log(`➕ Added ${userData.anonymousName} to room ${roomId}. Total: ${room.participants.length}`)
+    // Do NOT clean up room after adding user
   }
 
   /**
@@ -77,7 +80,7 @@ export class RoomManager {
     }
 
     // Clean up empty rooms
-    if (room.participants.length === 0) {
+    if (room.participants.length === 0 && !this._skipCleanup) {
       this.cleanupRoom(roomId)
     }
   }

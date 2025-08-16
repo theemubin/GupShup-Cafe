@@ -16,8 +16,9 @@ const roomManager = new RoomManager()
  */
 export function setupSocketHandlers(io) {
   io.on('connection', (socket) => {
-    console.log(`👤 User connected: ${socket.id}`)
-    
+    console.log(`[Backend] Socket connected: ${socket.id}`)
+    // Log handshake auth data
+    console.log('[Backend] Handshake auth:', socket.handshake.auth)
     // Store user data from auth
     const userData = {
       id: socket.handshake.auth.userId || socket.id,
@@ -72,13 +73,14 @@ export function setupSocketHandlers(io) {
         socket.currentRoom = roomId
         console.log(`[Backend] Joined new room: ${roomId}`);
 
-        // Add user to room manager
-        roomManager.addUserToRoom(roomId, effectiveUserData)
-        console.log('[Backend] Added user to room manager');
+  // Add user to room manager with debug logging
+  console.log('[Backend][DEBUG] Calling addUserToRoom:', roomId, effectiveUserData);
+  roomManager.addUserToRoom(roomId, effectiveUserData);
+  console.log('[Backend][DEBUG] addUserToRoom complete');
 
-        // Get updated participants
-        const participants = roomManager.getRoomParticipants(roomId)
-        console.log('[Backend] Participants after join:', participants);
+  // Get updated participants with debug logging
+  const participants = roomManager.getRoomParticipants(roomId);
+  console.log('[Backend][DEBUG] getRoomParticipants returned:', participants);
 
         // Emit participants update to all users in the room
         io.to(roomId).emit('participants-update', participants)
@@ -308,7 +310,6 @@ export function setupSocketHandlers(io) {
     } catch (error) {
       console.error('Error checking discussion start:', error)
     }
-  }
 
   /**
    * Start speaking timer for current speaker
@@ -437,3 +438,6 @@ export function setupSocketHandlers(io) {
     }
   }
 }
+// End of file
+}
+// End of file

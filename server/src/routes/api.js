@@ -200,6 +200,7 @@ router.post('/feedback', (req, res) => {
  */
 router.get('/config', (req, res) => {
   try {
+    // Build config object
     const config = {
       minParticipants: parseInt(process.env.MIN_PARTICIPANTS) || 1,
       maxParticipants: parseInt(process.env.MAX_PARTICIPANTS) || 8,
@@ -210,18 +211,30 @@ router.get('/config', (req, res) => {
         analytics: true,
         feedback: true
       }
+    };
+
+    // If config is missing, fallback to defaults
+    if (!config || typeof config !== 'object') {
+      console.warn('[api/config] Config is missing or invalid, returning fallback config');
+      return res.json({
+        success: true,
+        data: { maxPlayers: 8, roomName: 'default' }
+      });
     }
-    
+
+    // Always return valid JSON
     res.json({
       success: true,
       data: config
-    })
+    });
   } catch (error) {
-    console.error('Error getting config:', error)
+    // Log error and return valid JSON error response
+    console.error('[api/config] Error getting config:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to retrieve configuration'
-    })
+      error: 'Failed to retrieve configuration',
+      details: error.message
+    });
   }
 })
 
