@@ -21,8 +21,8 @@ export function SocketProvider({ children }) {
   useEffect(() => {
     // Only connect if user is authenticated
     if (isAuthenticated && user && anonymousName) {
-      // Use deployed backend URL for production, fallback to localhost for dev
-  const socketUrl = 'https://gupshup-cafe.onrender.com';
+  // Use local backend for development
+  const socketUrl = 'http://localhost:3003';
 
       // Create socket connection
       const newSocket = io(socketUrl, {
