@@ -36,7 +36,10 @@ export function setupSocketHandlers(io) {
     socket.on('join-room', (roomId = 'general') => {
       try {
         console.log(`📥 ${userData.anonymousName} joining room: ${roomId}`)
-        
+        // Debug: log current rooms and userData
+        console.log('Socket rooms before join:', Array.from(socket.rooms));
+        console.log('UserData:', userData);
+
         // Leave any existing rooms
         socket.rooms.forEach(room => {
           if (room !== socket.id) {
@@ -44,23 +47,24 @@ export function setupSocketHandlers(io) {
             roomManager.removeUserFromRoom(room, userData.id)
           }
         })
-        
+
         // Join the new room
         socket.join(roomId)
         socket.currentRoom = roomId
-        
-        // Add user to room manager
+
+        // Always add user to room manager (force for solo testing)
         roomManager.addUserToRoom(roomId, userData)
-        
+
         // Get updated participants
         const participants = roomManager.getRoomParticipants(roomId)
-        
+        console.log('Participants after join:', participants);
+
         // Emit participants update to all users in the room
         io.to(roomId).emit('participants-update', participants)
-        
+
         // Check if we can start the discussion
         checkAndStartDiscussion(roomId)
-        
+
       } catch (error) {
         console.error('Error joining room:', error)
         socket.emit('error', 'Failed to join room')

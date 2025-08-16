@@ -22,7 +22,7 @@ function LobbyPage() {
   
   const [participants, setParticipants] = useState([])
   const [roomId, setRoomId] = useState('general')
-  const [minParticipants, setMinParticipants] = useState(1)
+  const [minParticipants, setMinParticipants] = useState(1) // Default to 1 for solo testing
   const [isReady, setIsReady] = useState(false)
   const [waitingTime, setWaitingTime] = useState(0)
   const [systemMessage, setSystemMessage] = useState('Connecting to lobby...')
@@ -88,8 +88,11 @@ function LobbyPage() {
       try {
         const res = await fetch('/api/config')
         const json = await res.json()
-        const serverMin = json?.data?.minParticipants
-        if (serverMin && Number.isFinite(serverMin)) setMinParticipants(serverMin)
+  const serverMin = json?.data?.minParticipants
+  // Force minParticipants to 1 for local/single-user testing
+  setMinParticipants(1)
+  // If you want to use server config, comment out the line above and uncomment below
+  // if (serverMin && Number.isFinite(serverMin)) setMinParticipants(serverMin)
       } catch (err) {
         console.warn('Failed to fetch server config, using defaults', err)
       }
