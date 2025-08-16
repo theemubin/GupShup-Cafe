@@ -77,7 +77,14 @@ export function SocketProvider({ children }) {
    */
   const joinRoom = (roomId) => {
     if (socket) {
-      socket.emit('join-room', roomId)
+      // Always send user info with join-room for backend compatibility
+      socket.emit('join-room', roomId, {
+        userId: user?.id,
+        name: user?.name,
+        campus: user?.campus,
+        location: user?.location,
+        anonymousName: anonymousName
+      })
     }
   }
 

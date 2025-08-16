@@ -33,40 +33,62 @@ export function setupSocketHandlers(io) {
     /**
      * Handle user joining a room
      */
-    socket.on('join-room', (roomId = 'general') => {
+    socket.on('join-room', (...args) => {
       try {
-        console.log(`📥 ${userData.anonymousName} joining room: ${roomId}`)
-        // Debug: log current rooms and userData
-        console.log('Socket rooms before join:', Array.from(socket.rooms));
-        console.log('UserData:', userData);
+        // Robustly extract roomId and clientUserData
+        let roomId = 'general';
+        let clientUserData = null;
+        console.log('[Backend] join-room args:', args);
+        if (typeof args[0] === 'string') roomId = args[0];
+        if (typeof args[1] === 'object') clientUserData = args[1];
+
+        // Use clientUserData if provided, else fallback to handshake
+        const effectiveUserData = clientUserData && clientUserData.userId ? {
+          id: clientUserData.userId,
+          socketId: socket.id,
+          name: clientUserData.name,
+          campus: clientUserData.campus,
+          location: clientUserData.location,
+          anonymousName: clientUserData.anonymousName,
+          isReady: false,
+          joinedAt: new Date()
+        } : userData;
+
+        console.log(`[Backend] 📥 ${effectiveUserData.anonymousName} joining room: ${roomId}`);
+        console.log('[Backend] Socket rooms before join:', Array.from(socket.rooms));
+        console.log('[Backend] EffectiveUserData:', effectiveUserData);
 
         // Leave any existing rooms
         socket.rooms.forEach(room => {
           if (room !== socket.id) {
+            console.log(`[Backend] Leaving room: ${room}`);
             socket.leave(room)
-            roomManager.removeUserFromRoom(room, userData.id)
+            roomManager.removeUserFromRoom(room, effectiveUserData.id)
           }
         })
 
         // Join the new room
         socket.join(roomId)
         socket.currentRoom = roomId
+        console.log(`[Backend] Joined new room: ${roomId}`);
 
-        // Always add user to room manager (force for solo testing)
-        roomManager.addUserToRoom(roomId, userData)
+        // Add user to room manager
+        roomManager.addUserToRoom(roomId, effectiveUserData)
+        console.log('[Backend] Added user to room manager');
 
         // Get updated participants
         const participants = roomManager.getRoomParticipants(roomId)
-        console.log('Participants after join:', participants);
+        console.log('[Backend] Participants after join:', participants);
 
         // Emit participants update to all users in the room
         io.to(roomId).emit('participants-update', participants)
+        console.log('[Backend] Emitted participants-update');
 
         // Check if we can start the discussion
         checkAndStartDiscussion(roomId)
 
       } catch (error) {
-        console.error('Error joining room:', error)
+        console.error('[Backend] Error joining room:', error)
         socket.emit('error', 'Failed to join room')
       }
     })

@@ -41,10 +41,12 @@ function LobbyPage() {
     if (!socket) return
 
     // Join the general lobby room
+      console.log('[Lobby] Calling joinRoom with roomId:', roomId)
     joinRoom(roomId)
 
     // Handle participants update
     socket.on('participants-update', (updatedParticipants) => {
+        console.log('[Lobby] Received participants-update:', updatedParticipants)
       setParticipants(updatedParticipants)
       
       if (updatedParticipants.length >= 1) {
@@ -56,6 +58,7 @@ function LobbyPage() {
 
     // Handle discussion start
     socket.on('discussion-starting', () => {
+        console.log('[Lobby] Received discussion-starting event')
       setSystemMessage('Discussion starting! Redirecting to roundtable...')
       setTimeout(() => {
         navigate('/roundtable')
@@ -64,12 +67,14 @@ function LobbyPage() {
 
     // Handle user ready status
     socket.on('user-ready-update', (readyUsers) => {
+        console.log('[Lobby] Received user-ready-update:', readyUsers)
       // Update UI to show who's ready
       console.log('Ready users:', readyUsers)
     })
 
     // Handle system messages
     socket.on('system-message', (message) => {
+        console.log('[Lobby] Received system-message:', message)
       setSystemMessage(message)
     })
 
@@ -114,8 +119,10 @@ function LobbyPage() {
    * Handle ready button click
    */
   const handleReady = () => {
+      console.log('[Lobby] Ready button clicked. Participants:', participants, 'AudioEnabled:', audioEnabled)
     if (participants.length >= minParticipants && audioEnabled) {
       setIsReady(true)
+        console.log('[Lobby] Emitting signalReady')
       signalReady()
     }
   }
