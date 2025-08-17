@@ -1,3 +1,17 @@
+  // Join room on mount to receive participants-update
+  useEffect(() => {
+    if (socket && user) {
+      // Use 'general' as default room, or pass actual roomId if available
+      socket.emit('join-room', 'general', {
+        userId: user.id,
+        name: user.name,
+        campus: user.campus,
+        location: user.location,
+        anonymousName: anonymousName
+      });
+      console.log('[Roundtable][Debug] Emitted join-room from RoundtablePage');
+    }
+  }, [socket, user, anonymousName]);
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSocket } from '../contexts/SocketContext'
