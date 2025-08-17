@@ -20,7 +20,8 @@ function LobbyPage() {
     isWebRTCSupported 
   } = useAudio()
   
-  const [participants, setParticipants] = useState([])
+  const [
+    participants, setParticipants] = useState([])
   const [roomId, setRoomId] = useState('general')
   const [minParticipants, setMinParticipants] = useState(1) // Default to 1 for solo testing
   const [isReady, setIsReady] = useState(false)
@@ -29,6 +30,25 @@ function LobbyPage() {
 
   // Timer for waiting time
   useEffect(() => {
+    // Late join: check if discussion is already active
+    const checkDiscussionState = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || '';
+        console.log(`[Lobby][Debug] Fetching ${apiUrl}/api/room/${roomId}/state for late join check`)
+        const res = await fetch(`${apiUrl}/api/room/${roomId}/state`)
+        const json = await res.json()
+        console.log('[Lobby][Debug] Room state response:', json)
+        if (json?.discussion?.active) {
+          console.log('[Lobby][Debug] Late join detected - navigating to /roundtable')
+          navigate('/roundtable')
+        } else {
+          console.log('[Lobby][Debug] Room state: discussion not active')
+        }
+      } catch (err) {
+        console.warn('[Lobby][Debug] Failed to check room state for late join', err)
+      }
+    }
+    checkDiscussionState()
     const timer = setInterval(() => {
       setWaitingTime(prev => prev + 1)
     }, 1000)
@@ -38,17 +58,27 @@ function LobbyPage() {
 
   // Socket event handlers
   useEffect(() => {
-    if (!socket) return
+    if (!socket) {
+      console.log('[Lobby][Debug] Socket not available')
+      return
+    }
 
-    // Join the general lobby room
-      console.log('[Lobby] Calling joinRoom with roomId:', roomId)
-    joinRoom(roomId)
+    console.log('[Lobby][Debug] Socket available, connected:', connected)
+    // Socket connect/disconnect events
+    socket.on('connect', () => {
+      console.log('[Lobby][Debug] Socket connected:', socket.id)
+      console.log(`[Lobby][Debug] Calling joinRoom with roomId: ${roomId} (on connect)`)
+      joinRoom(roomId)
+    })
+    socket.on('disconnect', () => {
+      console.log('[Lobby][Debug] Socket disconnected')
+    })
 
     // Handle participants update
     socket.on('participants-update', (updatedParticipants) => {
-        console.log('[Lobby] Received participants-update:', updatedParticipants)
+      console.log('[Lobby][Debug] Received participants-update:', updatedParticipants)
       setParticipants(updatedParticipants)
-      
+      console.log('[Lobby][Debug] Current participants state:', updatedParticipants)
       if (updatedParticipants.length >= 1) {
         setSystemMessage('Ready to start! Click "Ready" when you want to begin.')
       } else {
@@ -57,29 +87,32 @@ function LobbyPage() {
     })
 
     // Handle discussion start
-    socket.on('discussion-starting', () => {
-        console.log('[Lobby] Received discussion-starting event')
+    socket.on('discussion-started', () => {
+      console.log('[Lobby][Debug] Received discussion-started event - navigating to /roundtable')
       setSystemMessage('Discussion starting! Redirecting to roundtable...')
       setTimeout(() => {
+        console.log('[Lobby][Debug] Navigating to /roundtable now')
         navigate('/roundtable')
       }, 2000)
     })
 
     // Handle user ready status
     socket.on('user-ready-update', (readyUsers) => {
-        console.log('[Lobby] Received user-ready-update:', readyUsers)
+      console.log('[Lobby][Debug] Received user-ready-update:', readyUsers)
       // Update UI to show who's ready
-      console.log('Ready users:', readyUsers)
+      console.log('[Lobby][Debug] Ready users:', readyUsers)
     })
 
     // Handle system messages
     socket.on('system-message', (message) => {
-        console.log('[Lobby] Received system-message:', message)
+      console.log('[Lobby][Debug] Received system-message:', message)
       setSystemMessage(message)
     })
 
     // Cleanup
     return () => {
+      socket.off('connect')
+      socket.off('disconnect')
       socket.off('participants-update')
       socket.off('discussion-starting')
       socket.off('user-ready-update')
@@ -91,13 +124,14 @@ function LobbyPage() {
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const res = await fetch('/api/config')
+        const apiUrl = import.meta.env.VITE_API_URL || '';
+        const res = await fetch(`${apiUrl}/api/config`)
         const json = await res.json()
-  const serverMin = json?.data?.minParticipants
-  // Force minParticipants to 1 for local/single-user testing
-  setMinParticipants(1)
-  // If you want to use server config, comment out the line above and uncomment below
-  // if (serverMin && Number.isFinite(serverMin)) setMinParticipants(serverMin)
+        const serverMin = json?.data?.minParticipants
+        // Force minParticipants to 1 for local/single-user testing
+        setMinParticipants(1)
+        // If you want to use server config, comment out the line above and uncomment below
+        // if (serverMin && Number.isFinite(serverMin)) setMinParticipants(serverMin)
       } catch (err) {
         console.warn('Failed to fetch server config, using defaults', err)
       }
@@ -119,10 +153,10 @@ function LobbyPage() {
    * Handle ready button click
    */
   const handleReady = () => {
-      console.log('[Lobby] Ready button clicked. Participants:', participants, 'AudioEnabled:', audioEnabled)
+  console.log('[Lobby][Debug] Ready button clicked. Participants:', participants, 'AudioEnabled:', audioEnabled)
     if (participants.length >= minParticipants && audioEnabled) {
       setIsReady(true)
-        console.log('[Lobby] Emitting signalReady')
+  console.log('[Lobby][Debug] Emitting signalReady')
       signalReady()
     }
   }

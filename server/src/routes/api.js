@@ -1,4 +1,27 @@
-import { Router } from 'express'
+import express from 'express';
+const router = express.Router();
+import { roomManager } from '../socket/roomManager.js';
+/**
+ * GET /api/room/:roomId/state
+ * Returns current room state including discussion status
+ */
+router.get('/room/:roomId/state', (req, res) => {
+  try {
+    const roomId = req.params.roomId;
+    const room = roomManager.getRoom(roomId);
+    if (!room) {
+      return res.status(404).json({ error: 'Room not found' });
+    }
+    res.json({
+      participants: room.participants,
+      discussion: room.discussion
+    });
+  } catch (error) {
+    console.error('[api/room/:roomId/state] Error:', error);
+    res.status(500).json({ error: 'Failed to get room state' });
+  }
+});
+// ...existing code...
 import { 
   getAllFallbackTopics, 
   generateDiscussionTopic, 
@@ -15,7 +38,7 @@ import {
  * RESTful endpoints for the application
  */
 
-const router = Router()
+// Removed duplicate router declaration
 
 /**
  * GET /api/health

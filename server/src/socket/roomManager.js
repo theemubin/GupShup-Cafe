@@ -3,7 +3,7 @@
  * Manages discussion rooms and participants
  */
 
-export class RoomManager {
+class RoomManager {
   // Internal flag to prevent cleanup during addUserToRoom
   _skipCleanup = false;
   constructor() {
@@ -197,3 +197,7 @@ export class RoomManager {
     }
   }
 }
+
+// Singleton instance
+const roomManager = new RoomManager();
+export { RoomManager, roomManager };
