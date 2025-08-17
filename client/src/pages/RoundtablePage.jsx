@@ -154,6 +154,7 @@ function RoundtablePage() {
     return currentSpeaker && currentSpeaker.id === user?.id
   }
 
+  console.log('[Roundtable][Debug] isLoading:', isLoading, 'participants:', participants, 'discussionStarted:', discussionStarted);
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
