@@ -18,6 +18,7 @@ function RoundtablePage() {
   const { socket, connected } = useSocket()
   const { user, anonymousName, logout } = useAuth()
   const { enableSpeaking, disableSpeaking } = useAudio()
+  console.log('[Roundtable][Debug] socket:', socket, 'connected:', connected);
   
   // Discussion state
   const [participants, setParticipants] = useState([])
