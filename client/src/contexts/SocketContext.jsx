@@ -21,8 +21,11 @@ export function SocketProvider({ children }) {
   useEffect(() => {
     // Only connect if user is authenticated
     if (isAuthenticated && user && anonymousName) {
-  // Use local backend for development
-  const socketUrl = 'http://localhost:3003';
+      // Use env variable or fallback to localhost for development
+      const isProd = import.meta.env.MODE === 'production';
+      const socketUrl = isProd
+        ? import.meta.env.VITE_SOCKET_URL
+        : import.meta.env.VITE_SOCKET_URL || 'http://localhost:3003';
 
       // Create socket connection
       const newSocket = io(socketUrl, {
@@ -39,13 +42,13 @@ export function SocketProvider({ children }) {
       newSocket.on('connect', () => {
         console.log('Connected to server:', newSocket.id)
         setConnected(true)
-  try { window.__GUPSHUP_SOCKET = newSocket } catch(e) {}
+        try { window.__GUPSHUP_SOCKET = newSocket } catch(e) {}
       })
 
       newSocket.on('disconnect', () => {
         console.log('Disconnected from server')
         setConnected(false)
-  try { window.__GUPSHUP_SOCKET = null } catch(e) {}
+        try { window.__GUPSHUP_SOCKET = null } catch(e) {}
       })
 
       newSocket.on('connect_error', (error) => {
