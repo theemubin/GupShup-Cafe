@@ -1,6 +1,9 @@
 {
   "version": 2,
   "name": "gupshup-cafe-frontend",
+  "buildCommand": "cd client && npm run build",
+  "outputDirectory": "client/dist",
+  "installCommand": "cd client && npm install",
   "env": {
     "VITE_API_URL": "https://gupshup-cafe.onrender.com",
     "VITE_SOCKET_URL": "https://gupshup-cafe.onrender.com",
