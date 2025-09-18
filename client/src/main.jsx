@@ -8,4 +8,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <App />
   </React.StrictMode>,
 )
+
+// Force new deployment - socket context fixes applied
 /* Build timestamp: Thu Sep 18 20:00:33 IST 2025 */
