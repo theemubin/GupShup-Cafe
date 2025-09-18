@@ -366,6 +366,27 @@ export async function getServerStats() {
 }
 
 /**
+ * Update session end metadata
+ */
+export async function updateSessionEnd({ id, endedAt, durationSeconds, roundsCompleted, participantCount }) {
+  return new Promise((resolve, reject) => {
+    const query = `
+      UPDATE sessions
+      SET ended_at = ?, duration_seconds = ?, rounds_completed = ?, participant_count = ?
+      WHERE id = ?
+    `
+    db.run(query, [endedAt, durationSeconds, roundsCompleted, participantCount, id], function(err) {
+      if (err) {
+        console.error('Error updating session end:', err)
+        reject(err)
+        return
+      }
+      resolve(this.changes)
+    })
+  })
+}
+
+/**
  * Close database connection
  */
 export function closeDatabase() {

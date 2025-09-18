@@ -1,20 +1,21 @@
 import { v4 as uuidv4 } from 'uuid'
 import { generateDiscussionTopic } from '../ai/topicGenerator.js'
-import { RoomManager } from './roomManager.js'
+import { roomManager } from './roomManager.js'
+import { saveSession, updateSessionEnd, recordTopicUsage } from '../database/database.js'
 
 /**
  * Socket.io Event Handlers
  * Manages real-time communication for the roundtable discussions
  */
 
-// Global room manager instance
-const roomManager = new RoomManager()
-
 /**
  * Setup Socket.io event handlers
  * @param {Server} io - Socket.io server instance
  */
 export function setupSocketHandlers(io) {
+  // in-memory map of active session ids per room
+  const activeSessions = new Map()
+
   io.on('connection', (socket) => {
     console.log(`[Backend] Socket connected: ${socket.id}`)
     // Log handshake auth data
@@ -261,6 +262,21 @@ export function setupSocketHandlers(io) {
           console.error('Error relaying ice candidate:', err)
         }
       })
+
+    /**
+     * Handle request for WebRTC readiness
+     */
+    socket.on('ready-for-webrtc', () => {
+      try {
+        const roomId = socket.currentRoom
+        if (!roomId) return
+        const participants = roomManager.getRoomParticipants(roomId)
+        // Re-emit full participant list only to requester to trigger offer creation
+        socket.emit('participants-update', participants)
+      } catch (e) {
+        console.warn('ready-for-webrtc handler error:', e.message)
+      }
+    })
   })
 
   /**
@@ -270,47 +286,45 @@ export function setupSocketHandlers(io) {
     try {
       const room = roomManager.getRoom(roomId)
       if (!room) return
-      
       const participants = room.participants
       const readyCount = participants.filter(p => p.isReady).length
       const minParticipants = parseInt(process.env.MIN_PARTICIPANTS) || 1
-      
-      // Check if we have enough ready participants
       if (participants.length >= minParticipants && readyCount >= minParticipants && !room.discussion.active) {
         console.log(`🚀 Starting discussion in room: ${roomId}`)
-        
-        // Generate discussion topic
         const topic = await generateDiscussionTopic()
-        
-        // Initialize discussion
+        // record topic usage (non-blocking)
+        recordTopicUsage(topic).catch(e => console.warn('Topic usage record failed:', e.message))
         const speakingTime = parseInt(process.env.DEFAULT_SPEAKING_TIME) || 60
         room.discussion = {
           active: true,
           topic,
-          currentSpeakerIndex: 0,
+            currentSpeakerIndex: 0,
           speakingTime,
           timeRemaining: speakingTime,
           round: 1,
           startedAt: new Date()
         }
-        
-        // Set first speaker
-        const firstSpeaker = participants[0]
-        
-        // Emit discussion started
-        io.to(roomId).emit('discussion-started', {
+        // persist session start
+        const sessionId = uuidv4()
+        activeSessions.set(roomId, sessionId)
+        saveSession({
+          id: sessionId,
+          roomId,
           topic,
-          firstSpeaker,
-          duration: speakingTime
-        })
-        
-        // Start the speaking timer
+          participantCount: participants.length,
+          startedAt: room.discussion.startedAt,
+          endedAt: null,
+          durationSeconds: null,
+          roundsCompleted: 0
+        }).catch(e => console.warn('Session save failed:', e.message))
+        const firstSpeaker = participants[0]
+        io.to(roomId).emit('discussion-started', { topic, firstSpeaker, duration: speakingTime })
         startSpeakingTimer(roomId)
       }
     } catch (error) {
       console.error('Error checking discussion start:', error)
     }
-
+  }
   /**
    * Start speaking timer for current speaker
    */
@@ -408,10 +422,19 @@ export function setupSocketHandlers(io) {
       // Mark discussion as ended
       room.discussion.active = false
       room.discussion.endedAt = new Date()
-      
-      // Emit discussion ended
+      const sessionId = activeSessions.get(roomId)
+      if (sessionId) {
+        const durationSeconds = Math.floor((room.discussion.endedAt - room.discussion.startedAt) / 1000)
+        updateSessionEnd({
+          id: sessionId,
+          endedAt: room.discussion.endedAt,
+          durationSeconds,
+          roundsCompleted: room.discussion.round - 1,
+          participantCount: room.participants.length
+        }).catch(e => console.warn('Session end update failed:', e.message))
+        activeSessions.delete(roomId)
+      }
       io.to(roomId).emit('discussion-ended')
-      
     } catch (error) {
       console.error('Error ending discussion:', error)
     }
@@ -424,11 +447,8 @@ export function setupSocketHandlers(io) {
     try {
       const room = roomManager.getRoom(roomId)
       if (!room || !room.discussion.active) return
-      
       const participants = room.participants
       const minParticipants = parseInt(process.env.MIN_PARTICIPANTS) || 1
-      
-      // End discussion if not enough participants
       if (participants.length < minParticipants) {
         console.log(`⚠️ Not enough participants in room ${roomId}, ending discussion`)
         endDiscussion(roomId)
@@ -437,7 +457,5 @@ export function setupSocketHandlers(io) {
       console.error('Error checking discussion continuation:', error)
     }
   }
-}
-// End of file
 }
 // End of file

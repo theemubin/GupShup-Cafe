@@ -112,7 +112,8 @@ class RoomManager {
       id: participant.id,
       anonymousName: participant.anonymousName,
       isReady: participant.isReady,
-      joinedAt: participant.joinedAt
+      joinedAt: participant.joinedAt,
+      socketId: participant.socketId // added for WebRTC signaling
     }))
   }
 

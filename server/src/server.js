@@ -29,7 +29,16 @@ const server = createServer(app)
 
 // Configuration
 const PORT = process.env.PORT || 3003
-const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173', 'http://localhost:5174']
+// Support either ALLOWED_ORIGINS (comma separated) or a single CORS_ORIGIN for deployment guides
+let configuredOrigins = []
+if (process.env.ALLOWED_ORIGINS) {
+  configuredOrigins = process.env.ALLOWED_ORIGINS.split(',')
+} else if (process.env.CORS_ORIGIN) { // legacy / guide variable name
+  configuredOrigins = [process.env.CORS_ORIGIN]
+}
+// Always include localhost defaults for dev unless explicitly disabled
+const defaultDevOrigins = ['http://localhost:5173', 'http://localhost:5174']
+const ALLOWED_ORIGINS = Array.from(new Set([...(configuredOrigins.length ? configuredOrigins : defaultDevOrigins)]))
 
 // Socket.io setup with CORS
 const io = new Server(server, {
@@ -122,6 +131,9 @@ async function startServer() {
     server.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`)
       console.log(`📡 Socket.io enabled with CORS origins: ${ALLOWED_ORIGINS.join(', ')}`)
+      if (process.env.CORS_ORIGIN && !process.env.ALLOWED_ORIGINS) {
+        console.log('ℹ️ Using CORS_ORIGIN (single) – consider switching to ALLOWED_ORIGINS for multiple domains.')
+      }
       console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`)
       console.log(`📊 Health check: http://localhost:${PORT}/health`)
       console.log('')

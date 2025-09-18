@@ -12,12 +12,14 @@ router.get('/room/:roomId/state', (req, res) => {
     if (!room) {
       return res.status(404).json({ error: 'Room not found' });
     }
-    res.json({
-      participants: room.participants,
-      discussion: room.discussion
-    });
+    // Serialize only safe discussion fields (avoid timer function reference)
+    const { active, topic, currentSpeakerIndex, speakingTime, timeRemaining, round, startedAt, endedAt } = room.discussion || {};
+    const discussion = { active, topic, currentSpeakerIndex, speakingTime, timeRemaining, round, startedAt, endedAt };
+    // Use standard participant projection (includes socketId, readiness)
+    const participants = roomManager.getRoomParticipants(roomId);
+    res.json({ participants, discussion });
   } catch (error) {
-    console.error('[api/room/:roomId/state] Error:', error);
+    console.error('[api/room/:roomId/state] Error:', error.message, error.stack);
     res.status(500).json({ error: 'Failed to get room state' });
   }
 });

@@ -193,9 +193,17 @@ export function AudioProvider({ children }) {
             audioEl = document.createElement('audio')
             audioEl.id = `remote_audio_${peerSocketId}`
             audioEl.autoplay = true
+            audioEl.playsInline = true
+            audioEl.setAttribute('data-peer', peerSocketId)
             document.body.appendChild(audioEl)
           }
           audioEl.srcObject = remoteStream
+          const playAttempt = audioEl.play()
+          if (playAttempt && typeof playAttempt.catch === 'function') {
+            playAttempt.catch(() => {
+              console.warn('Autoplay blocked: user gesture required.')
+            })
+          }
         }
       } catch (err) {
         console.error('Error handling ontrack event:', err)
