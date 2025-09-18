@@ -42,13 +42,11 @@ export function SocketProvider({ children }) {
       newSocket.on('connect', () => {
         console.log('Connected to server:', newSocket.id)
         setConnected(true)
-        try { window.__GUPSHUP_SOCKET = newSocket } catch(e) {}
       })
 
       newSocket.on('disconnect', () => {
         console.log('Disconnected from server')
         setConnected(false)
-        try { window.__GUPSHUP_SOCKET = null } catch(e) {}
       })
 
       newSocket.on('connect_error', (error) => {

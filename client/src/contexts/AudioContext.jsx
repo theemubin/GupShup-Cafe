@@ -101,7 +101,6 @@ export function AudioProvider({ children }) {
 
   /**
    * Setup handlers to create/accept peer connections using Socket.io for signaling
-   * This function expects `socket` to be available globally via window.__GUPSHUP_SOCKET
    */
   const setupPeerSignaling = () => {
     if (!socket) return
