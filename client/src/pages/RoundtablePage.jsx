@@ -17,8 +17,7 @@ function RoundtablePage() {
   const navigate = useNavigate()
   const { socket, connected } = useSocket()
   const { user, anonymousName, logout } = useAuth()
-  const { enableSpeaking, disableSpeaking } = useAudio()
-  console.log('[Roundtable][Debug] socket:', socket, 'connected:', connected);
+  const { enableSpeaking, disableSpeaking, enableAudioPlayback } = useAudio()
 
   // Join room on mount to receive participants-update
   useEffect(() => {
@@ -48,6 +47,7 @@ function RoundtablePage() {
   // UI state
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [showAudioEnablePrompt, setShowAudioEnablePrompt] = useState(false)
 
   // Socket event handlers
   useEffect(() => {
@@ -136,6 +136,19 @@ function RoundtablePage() {
     }
   }, [connected, isLoading, navigate])
 
+  // Show audio enable prompt when discussion starts and there are other participants
+  useEffect(() => {
+    if (discussionStarted && participants.length > 1) {
+      // Check if there are remote audio elements that might need user interaction
+      setTimeout(() => {
+        const remoteAudioElements = document.querySelectorAll('audio[data-peer]')
+        if (remoteAudioElements.length > 0) {
+          setShowAudioEnablePrompt(true)
+        }
+      }, 2000) // Wait 2 seconds for WebRTC connections to establish
+    }
+  }, [discussionStarted, participants.length])
+
   /**
    * Handle leaving the discussion
    */
@@ -170,7 +183,6 @@ function RoundtablePage() {
     return currentSpeaker && currentSpeaker.id === user?.id
   }
 
-  console.log('[Roundtable][Debug] isLoading:', isLoading, 'participants:', participants, 'discussionStarted:', discussionStarted);
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -200,6 +212,39 @@ function RoundtablePage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Audio Enable Prompt */}
+      {showAudioEnablePrompt && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex">
+              <div className="text-yellow-400 mr-3">🔊</div>
+              <div>
+                <p className="text-sm text-yellow-800">
+                  Click to enable audio to hear other participants
+                </p>
+              </div>
+            </div>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => {
+                  enableAudioPlayback()
+                  setShowAudioEnablePrompt(false)
+                }}
+                className="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 text-sm px-3 py-1 rounded"
+              >
+                Enable Audio
+              </button>
+              <button
+                onClick={() => setShowAudioEnablePrompt(false)}
+                className="text-yellow-800 hover:text-yellow-900 text-sm px-2"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">

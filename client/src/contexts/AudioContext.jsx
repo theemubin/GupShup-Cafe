@@ -108,11 +108,25 @@ export function AudioProvider({ children }) {
     // Handle incoming offers
     socket.on('webrtc-offer', async ({ from, sdp }) => {
       try {
-        if (!localStream) return
+        if (!localStream) {
+          console.warn('Received WebRTC offer but no local stream available')
+          return
+        }
+        
+        console.log(`Received WebRTC offer from ${from}`)
         const pc = createPeerConnection(from, socket)
+        
+        // Add local stream tracks before creating answer
+        localStream.getTracks().forEach(track => {
+          console.log(`Adding track ${track.kind} to answer peer ${from}`)
+          pc.addTrack(track, localStream)
+        })
+        
         await pc.setRemoteDescription({ type: 'offer', sdp })
         const answer = await pc.createAnswer()
         await pc.setLocalDescription(answer)
+        
+        console.log(`Sending WebRTC answer to ${from}`)
         socket.emit('webrtc-answer', { to: from, sdp: answer.sdp })
       } catch (err) {
         console.error('Error handling webrtc-offer:', err)
@@ -149,16 +163,21 @@ export function AudioProvider({ children }) {
           if (!peers[p.socketId] && localStream) {
             // create an offer to this peer
             const pc = createPeerConnection(p.socketId, socket)
-            pc.addStream && pc.addStream(localStream)
-            // modern API
-            try {
-              localStream.getTracks().forEach(track => pc.addTrack(track, localStream))
-            } catch (e) {
-              // ignore if addTrack not available
-            }
-            pc.createOffer().then(offer => pc.setLocalDescription(offer).then(() => {
-              socket.emit('webrtc-offer', { to: p.socketId, sdp: offer.sdp })
-            }))
+            
+            // Add local stream tracks to peer connection
+            localStream.getTracks().forEach(track => {
+              console.log(`Adding track ${track.kind} to peer ${p.socketId}`)
+              pc.addTrack(track, localStream)
+            })
+            
+            // Create and send offer
+            pc.createOffer()
+              .then(offer => pc.setLocalDescription(offer))
+              .then(() => {
+                console.log(`Sending WebRTC offer to ${p.socketId}`)
+                socket.emit('webrtc-offer', { to: p.socketId, sdp: pc.localDescription.sdp })
+              })
+              .catch(err => console.error('Error creating/sending offer:', err))
           }
         })
       } catch (err) {
@@ -181,6 +200,7 @@ export function AudioProvider({ children }) {
     // play remote tracks
     pc.ontrack = (event) => {
       try {
+        console.log(`Received remote track from ${peerSocketId}:`, event.track.kind)
         const remoteStream = event.streams && event.streams[0]
         if (remoteStream) {
           // attach to an audio element and autoplay
@@ -190,20 +210,45 @@ export function AudioProvider({ children }) {
             audioEl.id = `remote_audio_${peerSocketId}`
             audioEl.autoplay = true
             audioEl.playsInline = true
+            audioEl.controls = false // Hide controls but keep for debugging if needed
+            audioEl.volume = 1.0
             audioEl.setAttribute('data-peer', peerSocketId)
             document.body.appendChild(audioEl)
+            console.log(`Created audio element for peer ${peerSocketId}`)
           }
+          
           audioEl.srcObject = remoteStream
+          
+          // Try to play with better error handling
           const playAttempt = audioEl.play()
           if (playAttempt && typeof playAttempt.catch === 'function') {
-            playAttempt.catch(() => {
-              console.warn('Autoplay blocked: user gesture required.')
-            })
+            playAttempt
+              .then(() => {
+                console.log(`Successfully playing audio from ${peerSocketId}`)
+              })
+              .catch((error) => {
+                console.warn(`Autoplay blocked for ${peerSocketId}:`, error.message)
+                // Add click listener to enable audio on user interaction
+                const enableAudio = () => {
+                  audioEl.play()
+                    .then(() => {
+                      console.log(`Audio started after user interaction for ${peerSocketId}`)
+                      document.removeEventListener('click', enableAudio)
+                    })
+                    .catch(console.error)
+                }
+                document.addEventListener('click', enableAudio, { once: true })
+              })
           }
         }
       } catch (err) {
-        console.error('Error handling ontrack event:', err)
+        console.error(`Error handling ontrack event for ${peerSocketId}:`, err)
       }
+    }
+
+    // Add connection state change logging
+    pc.onconnectionstatechange = () => {
+      console.log(`Peer ${peerSocketId} connection state:`, pc.connectionState)
     }
 
     // store pc
@@ -263,6 +308,14 @@ export function AudioProvider({ children }) {
     return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
   }
 
+  // Enable audio playback for all remote streams (call this on user interaction)
+  const enableAudioPlayback = () => {
+    const audioElements = document.querySelectorAll('audio[data-peer]')
+    audioElements.forEach(audioEl => {
+      audioEl.play().catch(console.error)
+    })
+  }
+
   const value = {
     audioEnabled,
     micPermission,
@@ -274,7 +327,8 @@ export function AudioProvider({ children }) {
     toggleMute,
     stopAudio,
     enableSpeaking,
-    disableSpeaking
+    disableSpeaking,
+    enableAudioPlayback
   }
 
   return (
