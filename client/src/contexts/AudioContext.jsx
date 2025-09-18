@@ -1,4 +1,6 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import { useSocket } from './SocketContext'
 
 /**
  * Audio Context for managing WebRTC audio communication
@@ -18,6 +20,7 @@ export function AudioProvider({ children }) {
   const [isMuted, setIsMuted] = useState(true)
   const [audioLevel, setAudioLevel] = useState(0)
   const [peers, setPeers] = useState({}) // map socketId -> RTCPeerConnection
+  const { socket, connected } = useSocket()
 
   /**
    * Request microphone permission and get audio stream
@@ -40,14 +43,8 @@ export function AudioProvider({ children }) {
       setupAudioLevelMonitoring(stream)
 
       // If we have a socket connection, start signaling to peers
-      // We'll emit a simple 'ready-for-webrtc' event so other peers can initiate
-      try {
-        const socket = window.__GUPSHUP_SOCKET
-        if (socket && socket.connected) {
-          socket.emit('ready-for-webrtc')
-        }
-      } catch (e) {
-        // ignore
+      if (socket && connected) {
+        socket.emit('ready-for-webrtc')
       }
       
       return stream
@@ -106,7 +103,7 @@ export function AudioProvider({ children }) {
    * Setup handlers to create/accept peer connections using Socket.io for signaling
    * This function expects `socket` to be available globally via window.__GUPSHUP_SOCKET
    */
-  const setupPeerSignaling = (socket) => {
+  const setupPeerSignaling = () => {
     if (!socket) return
 
     // Handle incoming offers
@@ -253,6 +250,14 @@ export function AudioProvider({ children }) {
       stopAudio()
     }
   }, [])
+
+  // Setup peer signaling when socket is available
+  useEffect(() => {
+    if (socket && connected) {
+      setupPeerSignaling()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socket, connected])
 
   // Check for browser support
   const isWebRTCSupported = () => {
