@@ -6,6 +6,7 @@ import { AudioProvider } from './contexts/AudioContext'
 import LoginPage from './pages/LoginPage'
 import LobbyPage from './pages/LobbyPage'
 import RoundtablePage from './pages/RoundtablePage'
+import AudioTestPage from './pages/AudioTestPage'
 import ProtectedRoute from './components/ProtectedRoute'
 
 /**
@@ -35,6 +36,9 @@ function App() {
                     <RoundtablePage />
                   </ProtectedRoute>
                 } />
+                
+                {/* Audio Test Route - For debugging audio issues */}
+                <Route path="/audio-test" element={<AudioTestPage />} />
                 
                 {/* Fallback Route */}
                 <Route path="*" element={<LoginPage />} />

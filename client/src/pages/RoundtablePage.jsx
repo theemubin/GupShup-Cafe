@@ -8,6 +8,7 @@ import TopicDisplay from '../components/TopicDisplay'
 import SpeakerTimer from '../components/SpeakerTimer'
 import ParticipantControls from '../components/ParticipantControls'
 import { LogOut, Users } from 'lucide-react'
+import LiveAudioLevelBar from '../components/LiveAudioLevelBar'
 
 /**
  * Roundtable Page Component
@@ -258,16 +259,10 @@ function RoundtablePage() {
                 <p className="text-sm text-gray-500">Round {round} • {participants.length} participants</p>
               </div>
             </div>
-            
-            {/* Speaker Status */}
-            {discussionStarted && currentSpeaker && (
-              <div className="hidden md:flex items-center space-x-2 px-3 py-1 bg-green-100 rounded-full">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium text-green-800">
-                  {isCurrentUserSpeaking() ? 'You are speaking' : `${currentSpeaker.anonymousName} is speaking`}
-                </span>
-              </div>
-            )}
+            {/* Add the live audio level bar for your own mic */}
+            <div className="ml-6">
+              <LiveAudioLevelBar />
+            </div>
           </div>
           
           <div className="flex items-center space-x-3">

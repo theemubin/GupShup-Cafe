@@ -345,7 +345,22 @@ export function AudioProvider({ children }) {
 export function useAudio() {
   const context = useContext(AudioContext)
   if (!context) {
-    throw new Error('useAudio must be used within an AudioProvider')
+    // Return default values instead of throwing error to prevent crashes
+    console.warn('useAudio called outside AudioProvider, returning defaults')
+    return {
+      audioEnabled: false,
+      micPermission: null,
+      localStream: null,
+      isMuted: true,
+      audioLevel: 0,
+      isWebRTCSupported: false,
+      requestMicrophoneAccess: () => Promise.resolve(null),
+      toggleMute: () => {},
+      stopAudio: () => {},
+      enableSpeaking: () => {},
+      disableSpeaking: () => {},
+      enableAudioPlayback: () => {}
+    }
   }
   return context
 }
