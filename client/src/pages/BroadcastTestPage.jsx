@@ -112,18 +112,41 @@ export default function BroadcastTestPage() {
     pc.ontrack = (event) => {
       console.log('[BroadcastTest] Received remote stream')
       const remoteStream = event.streams[0]
-      
+      if (!remoteStream) return;
+
+      // Remove old audio element for this peer if exists
+      const oldElement = document.getElementById(`remote-audio-${targetSocketId}`)
+      if (oldElement) {
+        oldElement.remove()
+      }
+
       // Create audio element for remote stream
       const audioElement = document.createElement('audio')
       audioElement.srcObject = remoteStream
       audioElement.autoplay = true
       audioElement.controls = false
       audioElement.id = `remote-audio-${targetSocketId}`
-      
+      audioElement.volume = 1.0
+
       // Add to DOM
       const container = document.getElementById('remote-audio-container')
       if (container) {
         container.appendChild(audioElement)
+      }
+
+      // Try to play, handle autoplay block
+      const playAttempt = audioElement.play()
+      if (playAttempt && typeof playAttempt.catch === 'function') {
+        playAttempt.catch((err) => {
+          console.warn('Autoplay blocked, waiting for user interaction to play audio')
+          const enableAudio = () => {
+            audioElement.play().then(() => {
+              console.log('Audio started after user interaction')
+              document.removeEventListener('click', enableAudio)
+            }).catch(console.error)
+          }
+          document.addEventListener('click', enableAudio, { once: true })
+        })
       }
     }
 
