@@ -23,6 +23,7 @@ function LobbyPage() {
   const [
     participants, setParticipants] = useState([])
   const [roomId, setRoomId] = useState('general')
+  const [selectedRole, setSelectedRole] = useState('speaker') // Default to speaker
   const [minParticipants, setMinParticipants] = useState(1) // Default to 1 for solo testing
   const [isReady, setIsReady] = useState(false)
   const [waitingTime, setWaitingTime] = useState(0)
@@ -67,8 +68,8 @@ function LobbyPage() {
     // Socket connect/disconnect events
     socket.on('connect', () => {
       console.log('[Lobby][Debug] Socket connected:', socket.id)
-      console.log(`[Lobby][Debug] Calling joinRoom with roomId: ${roomId} (on connect)`)
-      joinRoom(roomId)
+      console.log(`[Lobby][Debug] Calling joinRoom with roomId: ${roomId}, role: ${selectedRole} (on connect)`)
+      joinRoom(roomId, selectedRole)
     })
     socket.on('disconnect', () => {
       console.log('[Lobby][Debug] Socket disconnected')
@@ -118,7 +119,7 @@ function LobbyPage() {
       socket.off('user-ready-update')
       socket.off('system-message')
     }
-  }, [socket, joinRoom, roomId, navigate])
+  }, [socket, joinRoom, roomId, selectedRole, navigate, connected])
 
   // Fetch server-side configuration (minParticipants, etc.)
   useEffect(() => {
@@ -237,6 +238,51 @@ function LobbyPage() {
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Session Status</h2>
               
               <div className="space-y-4">
+                {/* Role Selection */}
+                <div className="space-y-2">
+                  <span className="text-gray-600 text-sm font-medium">Your Role</span>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => {
+                        setSelectedRole('speaker')
+                        if (connected) {
+                          console.log('[Lobby] Role changed to speaker, rejoining room')
+                          joinRoom(roomId, 'speaker')
+                        }
+                      }}
+                      className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        selectedRole === 'speaker'
+                          ? 'bg-primary-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      🎤 Speaker
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedRole('listener')
+                        if (connected) {
+                          console.log('[Lobby] Role changed to listener, rejoining room')
+                          joinRoom(roomId, 'listener')
+                        }
+                      }}
+                      className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        selectedRole === 'listener'
+                          ? 'bg-primary-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      👂 Listener
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    {selectedRole === 'speaker' 
+                      ? 'You can speak and participate actively in discussions'
+                      : 'You will listen to discussions without speaking privileges'
+                    }
+                  </p>
+                </div>
+
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Participants</span>
                   <span className={`font-semibold ${
@@ -330,9 +376,18 @@ function LobbyPage() {
                   </div>
                   <div className="flex-1">
                     <p className="font-medium text-gray-900">{participant.anonymousName}</p>
-                    <p className="text-sm text-gray-500">
-                      {participant.isReady ? 'Ready' : 'Waiting'}
-                    </p>
+                    <div className="flex items-center space-x-2">
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                        participant.role === 'speaker' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {participant.role === 'speaker' ? '🎤 Speaker' : '👂 Listener'}
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        {participant.isReady ? 'Ready' : 'Waiting'}
+                      </span>
+                    </div>
                   </div>
                   {participant.isReady && (
                     <div className="w-3 h-3 bg-green-500 rounded-full"></div>

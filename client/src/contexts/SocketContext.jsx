@@ -75,8 +75,9 @@ export function SocketProvider({ children }) {
   /**
    * Join a room
    * @param {string} roomId - Room identifier
+   * @param {string} role - User role ('speaker' or 'listener')
    */
-  const joinRoom = (roomId) => {
+  const joinRoom = (roomId, role = 'listener') => {
     if (socket) {
       // Always send user info with join-room for backend compatibility
       socket.emit('join-room', roomId, {
@@ -84,7 +85,8 @@ export function SocketProvider({ children }) {
         name: user?.name,
         campus: user?.campus,
         location: user?.location,
-        anonymousName: anonymousName
+        anonymousName: anonymousName,
+        role: role
       })
     }
   }
@@ -118,6 +120,22 @@ export function SocketProvider({ children }) {
   }
 
   /**
+   * Change user role in current room
+   * @param {string} userId - User identifier
+   * @param {string} newRole - New role ('speaker' or 'listener')
+   * @param {string} roomId - Optional room ID
+   */
+  const changeRole = (userId, newRole, roomId = null) => {
+    if (socket) {
+      socket.emit('role-change', {
+        userId,
+        newRole,
+        roomId
+      })
+    }
+  }
+
+  /**
    * Request next speaker in the discussion
    */
   const requestNextSpeaker = () => {
@@ -133,7 +151,8 @@ export function SocketProvider({ children }) {
     leaveRoom,
     sendMessage,
     signalReady,
-    requestNextSpeaker
+    requestNextSpeaker,
+    changeRole
   }
 
   return (

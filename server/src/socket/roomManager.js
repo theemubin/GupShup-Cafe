@@ -57,6 +57,7 @@ class RoomManager {
       name: userData.name,
       campus: userData.campus,
       location: userData.location,
+      role: userData.role || 'listener', // Default to listener
       isReady: userData.isReady || false,
       joinedAt: userData.joinedAt || new Date()
     })
@@ -134,6 +135,61 @@ class RoomManager {
       round: room.discussion.round,
       participantCount: room.participants.length
     }
+  }
+
+  /**
+   * Change user role in room
+   * @param {string} roomId - Room identifier
+   * @param {string} userId - User identifier
+   * @param {string} newRole - New role ('speaker' or 'listener')
+   * @returns {boolean} Success status
+   */
+  changeUserRole(roomId, userId, newRole) {
+    if (!['speaker', 'listener'].includes(newRole)) {
+      return false
+    }
+
+    const room = this.getRoom(roomId)
+    const user = room.participants.find(p => p.id === userId)
+    
+    if (user) {
+      const oldRole = user.role
+      user.role = newRole
+      console.log(`🔄 Changed ${user.anonymousName} role from ${oldRole} to ${newRole} in room ${roomId}`)
+      return true
+    }
+    
+    return false
+  }
+
+  /**
+   * Get role statistics for a room
+   * @param {string} roomId - Room identifier
+   * @returns {Object} Role statistics
+   */
+  getRoleStats(roomId) {
+    const room = this.getRoom(roomId)
+    const speakers = room.participants.filter(p => p.role === 'speaker')
+    const listeners = room.participants.filter(p => p.role === 'listener')
+    
+    return {
+      totalParticipants: room.participants.length,
+      speakers: speakers.length,
+      listeners: listeners.length,
+      speakerList: speakers,
+      listenerList: listeners
+    }
+  }
+
+  /**
+   * Check if user can become speaker (based on room limits)
+   * @param {string} roomId - Room identifier
+   * @param {number} maxSpeakers - Maximum allowed speakers (default: 6)
+   * @returns {boolean} Can become speaker
+   */
+  canBecomeSpeaker(roomId, maxSpeakers = 6) {
+    const stats = this.getRoleStats(roomId)
+    return stats.speakers < maxSpeakers
   }
 
   /**

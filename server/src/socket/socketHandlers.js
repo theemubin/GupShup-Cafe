@@ -52,9 +52,10 @@ export function setupSocketHandlers(io) {
           campus: clientUserData.campus,
           location: clientUserData.location,
           anonymousName: clientUserData.anonymousName,
+          role: clientUserData.role || 'listener', // Support role from client
           isReady: false,
           joinedAt: new Date()
-        } : userData;
+        } : { ...userData, role: userData.role || 'listener' };
 
         console.log(`[Backend] 📥 ${effectiveUserData.anonymousName} joining room: ${roomId}`);
         console.log('[Backend] Socket rooms before join:', Array.from(socket.rooms));
@@ -174,6 +175,58 @@ export function setupSocketHandlers(io) {
         
       } catch (error) {
         console.error('Error handling next speaker:', error)
+      }
+    })
+
+    /**
+     * Handle role change requests
+     */
+    socket.on('role-change', (data) => {
+      try {
+        const { userId, newRole, roomId } = data
+        const targetRoomId = roomId || socket.currentRoom
+        
+        if (!targetRoomId) {
+          socket.emit('role-change-error', { message: 'Not in a room' })
+          return
+        }
+
+        // Validate role
+        if (!['speaker', 'listener'].includes(newRole)) {
+          socket.emit('role-change-error', { message: 'Invalid role' })
+          return
+        }
+
+        // Check if trying to become speaker when at limit
+        if (newRole === 'speaker' && !roomManager.canBecomeSpeaker(targetRoomId)) {
+          socket.emit('role-change-error', { message: 'Speaker limit reached' })
+          return
+        }
+
+        // Change the role
+        const success = roomManager.changeUserRole(targetRoomId, userId, newRole)
+        
+        if (success) {
+          // Get updated room state
+          const room = roomManager.getRoom(targetRoomId)
+          const roleStats = roomManager.getRoleStats(targetRoomId)
+          
+          // Notify all participants of the role change
+          io.to(targetRoomId).emit('role-changed', {
+            userId,
+            newRole,
+            roleStats,
+            participants: room.participants
+          })
+
+          socket.emit('role-change-success', { newRole })
+        } else {
+          socket.emit('role-change-error', { message: 'Failed to change role' })
+        }
+        
+      } catch (error) {
+        console.error('Error handling role change:', error)
+        socket.emit('role-change-error', { message: 'Internal server error' })
       }
     })
 
