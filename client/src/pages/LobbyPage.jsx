@@ -51,53 +51,41 @@ function LobbyPage() {
     }
 
     // Production late join logic
-    const persistentNavigating = sessionStorage.getItem('roundtable-navigating')
-    if (isNavigating || persistentNavigating === 'true' || window.lateJoinCheckInProgress) {
-      console.log('[Lobby][Debug] Navigation already in progress, skipping late join check')
-      return
-    }
+    let isMounted = true; // Flag to check if component is still mounted
 
-    // Late join: check if discussion is already active
     const checkDiscussionState = async () => {
-      if (window.lateJoinCheckInProgress) {
-        console.log('[Lobby][Debug] Late join check already in progress')
-        return
-      }
-      
-      window.lateJoinCheckInProgress = true
-      
+      // Check if a discussion is already active for late joiners
       try {
         const apiUrl = import.meta.env.VITE_API_URL || '';
-        console.log(`[Lobby][Debug] Fetching ${apiUrl}/api/room/${roomId}/state for late join check`)
-        const res = await fetch(`${apiUrl}/api/room/${roomId}/state`)
-        const json = await res.json()
-        console.log('[Lobby][Debug] Room state response:', json)
+        const res = await fetch(`${apiUrl}/api/room/${roomId}/state`);
+        const json = await res.json();
         
-        if (json?.discussion?.active) {
-          console.log('[Lobby][Debug] Late join detected - navigating to /roundtable') 
-          setIsNavigating(true)
-          sessionStorage.setItem('roundtable-navigating', 'true')
-          navigate('/roundtable', { replace: true })
-          return
-        } else {
-          console.log('[Lobby][Debug] Room state: discussion not active')
-          window.lateJoinCheckInProgress = false
+        if (isMounted && json?.discussion?.active) {
+          console.log('[Lobby][Debug] Late join detected - navigating to /roundtable');
+          // Use a session flag to indicate a late join is in progress
+          sessionStorage.setItem('late-join-navigating', 'true');
+          navigate('/roundtable', { replace: true });
         }
       } catch (err) {
-        console.warn('[Lobby][Debug] Failed to check room state for late join', err)
-        window.lateJoinCheckInProgress = false
+        console.warn('[Lobby][Debug] Failed to check room state for late join', err);
       }
-    }
-    
-    checkDiscussionState()
-    
-    const timer = setInterval(() => {
-      if (!isNavigating && !window.lateJoinCheckInProgress) {
-        setWaitingTime(prev => prev + 1)
-      }
-    }, 1000)
+    };
 
-    return () => clearInterval(timer)
+    // If not in development, and not already joining, check the state
+    if (!isDevelopment && !sessionStorage.getItem('late-join-navigating')) {
+      checkDiscussionState();
+    }
+
+    const timer = setInterval(() => {
+      if (isMounted) {
+        setWaitingTime(prev => prev + 1);
+      }
+    }, 1000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(timer);
+    };
   }, [roomId, isNavigating, navigate])
 
   // Socket event handlers

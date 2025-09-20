@@ -53,8 +53,8 @@ function RoundtablePage() {
   useEffect(() => {
     setDiscussionStarted(true);
     setIsLoading(false);
-    // Clear the navigation flag from the lobby to prevent loops on refresh
-    sessionStorage.removeItem('roundtable-navigating');
+    // Clear the late-join flag once successfully on the roundtable page
+    sessionStorage.removeItem('late-join-navigating');
   }, []);
 
   // Socket event handlers
