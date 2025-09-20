@@ -16,9 +16,9 @@ import LiveAudioLevelBar from '../components/LiveAudioLevelBar'
  */
 function RoundtablePage() {
   const navigate = useNavigate()
-  const { socket, connected } = useSocket()
+  const { socket, connected, changeRole } = useSocket()
   const { user, anonymousName, logout } = useAuth()
-  const { enableSpeaking, disableSpeaking, enableAudioPlayback } = useAudio()
+  const { enableSpeaking, disableSpeaking, enableAudioPlayback, userRole } = useAudio()
 
   // Join room on mount to receive participants-update
   useEffect(() => {
@@ -29,7 +29,8 @@ function RoundtablePage() {
         name: user.name,
         campus: user.campus,
         location: user.location,
-        anonymousName: anonymousName
+        anonymousName: anonymousName,
+        role: userRole || 'listener'
       });
       console.log('[Roundtable][Debug] Emitted join-room from RoundtablePage');
     }
@@ -94,10 +95,24 @@ function RoundtablePage() {
       setTimeRemaining(time)
     })
 
-    // Handle discussion end
+        // Handle discussion end
     socket.on('discussion-ended', () => {
       setDiscussionEnded(true)
+      setCurrentSpeaker(null)
+      setTimeRemaining(0)
       disableSpeaking()
+    })
+
+    // Handle role change responses
+    socket.on('role-change-success', ({ newRole }) => {
+      console.log(`[Roundtable] Role successfully changed to ${newRole}`)
+    })
+
+    socket.on('role-change-error', ({ message }) => {
+      console.error(`[Roundtable] Role change failed: ${message}`)
+      setError(`Failed to change role: ${message}`)
+      // Clear error after 3 seconds
+      setTimeout(() => setError(null), 3000)
     })
 
     // Handle user disconnection
@@ -182,6 +197,15 @@ function RoundtablePage() {
    */
   const isCurrentUserSpeaking = () => {
     return currentSpeaker && currentSpeaker.id === user?.id
+  }
+
+  /**
+   * Toggle user role between speaker and listener
+   */
+  const handleRoleToggle = () => {
+    const newRole = userRole === 'speaker' ? 'listener' : 'speaker'
+    console.log(`[Roundtable] Requesting role change to ${newRole}`)
+    changeRole(user?.id, newRole)
   }
 
   if (isLoading) {
@@ -275,6 +299,19 @@ function RoundtablePage() {
               }`}></div>
               <span>{connected ? 'Connected' : 'Disconnected'}</span>
             </div>
+            
+            {/* Role Toggle */}
+            <button
+              onClick={handleRoleToggle}
+              className={`px-3 py-1 text-sm font-medium border rounded transition-colors ${
+                userRole === 'speaker'
+                  ? 'bg-primary-100 text-primary-700 border-primary-300 hover:bg-primary-200'
+                  : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+              }`}
+              title={`Switch to ${userRole === 'speaker' ? 'listener' : 'speaker'}`}
+            >
+              {userRole === 'speaker' ? '🎤 Speaker' : '👂 Listener'}
+            </button>
             
             {/* Controls */}
             <button

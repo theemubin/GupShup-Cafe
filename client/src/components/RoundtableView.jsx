@@ -69,13 +69,27 @@ function RoundtableView({ participants, currentSpeaker, currentTopic, discussion
           </div>
         )}
         
+        {/* Role Indicator */}
+        <div className={`absolute -top-1 -left-1 w-4 h-4 rounded-full border-2 border-white text-xs flex items-center justify-center ${
+          participant.role === 'speaker' 
+            ? 'bg-blue-500 text-white' 
+            : 'bg-gray-400 text-white'
+        }`}>
+          {participant.role === 'speaker' ? '🎤' : '👂'}
+        </div>
+
         {/* Name Label */}
-        <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 
+        <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 
                         bg-white px-2 py-1 rounded-md shadow-sm border text-xs font-medium 
                         text-gray-700 whitespace-nowrap">
           {participant.anonymousName}
+          <div className={`text-xs ${
+            participant.role === 'speaker' ? 'text-blue-600' : 'text-gray-500'
+          }`}>
+            {participant.role === 'speaker' ? '🎤 Speaker' : '👂 Listener'}
+          </div>
           {isCurrentSpeaker && (
-            <div className="text-green-600 font-semibold">🎤 Speaking</div>
+            <div className="text-green-600 font-semibold">Currently Speaking</div>
           )}
         </div>
       </div>
