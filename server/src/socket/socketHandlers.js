@@ -510,5 +510,115 @@ export function setupSocketHandlers(io) {
       console.error('Error checking discussion continuation:', error)
     }
   }
+
+  // ===== BROADCAST TEST HANDLERS =====
+  // Simple broadcast test - first person becomes broadcaster, others listeners
+  const broadcastTestRoom = {
+    participants: [],
+    broadcaster: null
+  }
+
+  /**
+   * Handle joining broadcast test
+   */
+  socket.on('join-broadcast-test', () => {
+    console.log(`[BroadcastTest] ${socket.id} joining broadcast test`)
+    
+    // Determine role - first person is broadcaster
+    const role = broadcastTestRoom.participants.length === 0 ? 'broadcaster' : 'listener'
+    
+    const participant = {
+      socketId: socket.id,
+      username: userData.name || userData.anonymousName || `User-${socket.id.substring(0, 6)}`,
+      role,
+      joinedAt: new Date()
+    }
+    
+    broadcastTestRoom.participants.push(participant)
+    
+    if (role === 'broadcaster') {
+      broadcastTestRoom.broadcaster = socket.id
+    }
+    
+    // Join socket room
+    socket.join('broadcast-test')
+    
+    // Send role to this user
+    socket.emit('broadcast-test-role', role)
+    
+    // Send updated participant list to all
+    io.to('broadcast-test').emit('broadcast-test-participants', broadcastTestRoom.participants)
+    
+    // If this is a new listener, notify broadcaster
+    if (role === 'listener' && broadcastTestRoom.broadcaster) {
+      io.to(broadcastTestRoom.broadcaster).emit('new-listener-joined', { socketId: socket.id })
+    }
+    
+    console.log(`[BroadcastTest] ${socket.id} assigned role: ${role}`)
+  })
+
+  /**
+   * Handle broadcaster ready signal
+   */
+  socket.on('broadcaster-ready', () => {
+    console.log(`[BroadcastTest] Broadcaster ${socket.id} is ready`)
+    // Broadcaster is ready to receive connections from listeners
+  })
+
+  /**
+   * Handle WebRTC signaling for broadcast test
+   */
+  socket.on('webrtc-offer', ({ targetSocketId, offer }) => {
+    console.log(`[BroadcastTest] Relaying offer from ${socket.id} to ${targetSocketId}`)
+    io.to(targetSocketId).emit('webrtc-offer', {
+      fromSocketId: socket.id,
+      offer
+    })
+  })
+
+  socket.on('webrtc-answer', ({ targetSocketId, answer }) => {
+    console.log(`[BroadcastTest] Relaying answer from ${socket.id} to ${targetSocketId}`)
+    io.to(targetSocketId).emit('webrtc-answer', {
+      fromSocketId: socket.id,
+      answer
+    })
+  })
+
+  socket.on('webrtc-ice-candidate', ({ targetSocketId, candidate }) => {
+    console.log(`[BroadcastTest] Relaying ICE candidate from ${socket.id} to ${targetSocketId}`)
+    io.to(targetSocketId).emit('webrtc-ice-candidate', {
+      fromSocketId: socket.id,
+      candidate
+    })
+  })
+
+  /**
+   * Handle user disconnection from broadcast test
+   */
+  const handleBroadcastTestDisconnect = () => {
+    const participantIndex = broadcastTestRoom.participants.findIndex(p => p.socketId === socket.id)
+    
+    if (participantIndex !== -1) {
+      const participant = broadcastTestRoom.participants[participantIndex]
+      console.log(`[BroadcastTest] ${socket.id} (${participant.role}) left broadcast test`)
+      
+      // Remove participant
+      broadcastTestRoom.participants.splice(participantIndex, 1)
+      
+      // If broadcaster left, reset the room
+      if (participant.role === 'broadcaster') {
+        broadcastTestRoom.broadcaster = null
+        console.log('[BroadcastTest] Broadcaster left, resetting room')
+      }
+      
+      // Update participant list for remaining users
+      io.to('broadcast-test').emit('broadcast-test-participants', broadcastTestRoom.participants)
+    }
+  }
+
+  // Register disconnect handler for broadcast test
+  socket.on('disconnect', () => {
+    handleBroadcastTestDisconnect()
+  })
 }
 // End of file

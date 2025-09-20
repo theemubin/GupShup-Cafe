@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage'
 import LobbyPage from './pages/LobbyPage'
 import RoundtablePage from './pages/RoundtablePage'
 import AudioTestPage from './pages/AudioTestPage'
+import BroadcastTestPage from './pages/BroadcastTestPage'
 import ProtectedRoute from './components/ProtectedRoute'
 
 /**
@@ -39,6 +40,9 @@ function App() {
                 
                 {/* Audio Test Route - For debugging audio issues */}
                 <Route path="/audio-test" element={<AudioTestPage />} />
+                
+                {/* Broadcast Test Route - Simple broadcast audio test */}
+                <Route path="/broadcast-test" element={<BroadcastTestPage />} />
                 
                 {/* Fallback Route */}
                 <Route path="*" element={<LoginPage />} />
