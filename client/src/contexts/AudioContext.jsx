@@ -20,12 +20,22 @@ export function AudioProvider({ children }) {
   const [isMuted, setIsMuted] = useState(true)
   const [audioLevel, setAudioLevel] = useState(0)
   const [peers, setPeers] = useState({}) // map socketId -> RTCPeerConnection
+  const [userRole, setUserRole] = useState('listener') // Track user's current role
   const { socket, connected } = useSocket()
 
   /**
    * Request microphone permission and get audio stream
+   * Only allowed for speakers
    */
-  const requestMicrophoneAccess = async () => {
+  const requestMicrophoneAccess = async (forceRole = null) => {
+    const effectiveRole = forceRole || userRole
+    
+    // Only speakers can request microphone access
+    if (effectiveRole !== 'speaker') {
+      console.log('[Audio] Microphone access denied - user is not a speaker')
+      setMicPermission('denied')
+      return null
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
@@ -53,6 +63,36 @@ export function AudioProvider({ children }) {
       setMicPermission('denied')
       setAudioEnabled(false)
       return null
+    }
+  }
+
+  /**
+   * Update user role and handle audio stream accordingly
+   * @param {string} newRole - New role ('speaker' or 'listener')
+   */
+  const updateUserRole = async (newRole) => {
+    console.log(`[Audio] Updating user role from ${userRole} to ${newRole}`)
+    const oldRole = userRole
+    setUserRole(newRole)
+
+    if (newRole === 'speaker' && oldRole === 'listener') {
+      // Promote to speaker - request microphone access
+      console.log('[Audio] Promoted to speaker - requesting microphone access')
+      await requestMicrophoneAccess('speaker')
+    } else if (newRole === 'listener' && oldRole === 'speaker') {
+      // Demote to listener - stop local stream
+      console.log('[Audio] Demoted to listener - stopping microphone stream')
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop())
+        setLocalStream(null)
+        setAudioEnabled(false)
+        setMicPermission(null)
+        setAudioLevel(0)
+      }
+      
+      // Close all peer connections as we're no longer publishing
+      Object.values(peers).forEach(pc => pc.close())
+      setPeers({})
     }
   }
 
@@ -108,19 +148,18 @@ export function AudioProvider({ children }) {
     // Handle incoming offers
     socket.on('webrtc-offer', async ({ from, sdp }) => {
       try {
-        if (!localStream) {
-          console.warn('Received WebRTC offer but no local stream available')
-          return
-        }
-        
         console.log(`Received WebRTC offer from ${from}`)
         const pc = createPeerConnection(from, socket)
         
-        // Add local stream tracks before creating answer
-        localStream.getTracks().forEach(track => {
-          console.log(`Adding track ${track.kind} to answer peer ${from}`)
-          pc.addTrack(track, localStream)
-        })
+        // Add local stream tracks only if we're a speaker
+        if (localStream && userRole === 'speaker') {
+          localStream.getTracks().forEach(track => {
+            console.log(`Adding track ${track.kind} to answer peer ${from}`)
+            pc.addTrack(track, localStream)
+          })
+        } else if (userRole === 'listener') {
+          console.log('Listener receiving offer - will answer without adding tracks')
+        }
         
         await pc.setRemoteDescription({ type: 'offer', sdp })
         const answer = await pc.createAnswer()
@@ -160,29 +199,59 @@ export function AudioProvider({ children }) {
       try {
         const otherPeers = updatedParticipants.filter(p => p.socketId && p.socketId !== socket.id)
         otherPeers.forEach(p => {
-          if (!peers[p.socketId] && localStream) {
-            // create an offer to this peer
+          // Only create connections if we are a speaker with local stream, or if the other peer is a speaker
+          if (!peers[p.socketId]) {
             const pc = createPeerConnection(p.socketId, socket)
             
-            // Add local stream tracks to peer connection
-            localStream.getTracks().forEach(track => {
-              console.log(`Adding track ${track.kind} to peer ${p.socketId}`)
-              pc.addTrack(track, localStream)
-            })
-            
-            // Create and send offer
-            pc.createOffer()
-              .then(offer => pc.setLocalDescription(offer))
-              .then(() => {
-                console.log(`Sending WebRTC offer to ${p.socketId}`)
-                socket.emit('webrtc-offer', { to: p.socketId, sdp: pc.localDescription.sdp })
+            // Only add our tracks if we're a speaker with a local stream
+            if (localStream && userRole === 'speaker') {
+              localStream.getTracks().forEach(track => {
+                console.log(`Adding track ${track.kind} to peer ${p.socketId}`)
+                pc.addTrack(track, localStream)
               })
-              .catch(err => console.error('Error creating/sending offer:', err))
+              
+              // Create and send offer since we have tracks to share
+              pc.createOffer()
+                .then(offer => pc.setLocalDescription(offer))
+                .then(() => {
+                  console.log(`Sending WebRTC offer to ${p.socketId}`)
+                  socket.emit('webrtc-offer', { to: p.socketId, sdp: pc.localDescription.sdp })
+                })
+                .catch(err => console.error('Error creating/sending offer:', err))
+            }
+            // If we're a listener, we'll just wait for offers from speakers
           }
         })
       } catch (err) {
         console.error('Error during participants-update handling for WebRTC:', err)
       }
+    })
+
+    // Handle role changes
+    socket.on('role-changed', ({ userId, newRole, participants }) => {
+      try {
+        // If this is our role change, update our audio capabilities
+        if (socket.id && participants) {
+          const ourParticipant = participants.find(p => p.socketId === socket.id)
+          if (ourParticipant && ourParticipant.role !== userRole) {
+            console.log(`[Audio] Role changed to ${ourParticipant.role}`)
+            updateUserRole(ourParticipant.role)
+          }
+        }
+      } catch (err) {
+        console.error('Error handling role change:', err)
+      }
+    })
+
+    // Handle successful role change confirmation
+    socket.on('role-change-success', ({ newRole }) => {
+      console.log(`[Audio] Role change confirmed: ${newRole}`)
+      updateUserRole(newRole)
+    })
+
+    // Handle role change errors
+    socket.on('role-change-error', ({ message }) => {
+      console.error(`[Audio] Role change failed: ${message}`)
     })
   }
 
@@ -322,8 +391,10 @@ export function AudioProvider({ children }) {
     localStream,
     isMuted,
     audioLevel,
+    userRole,
     isWebRTCSupported: isWebRTCSupported(),
     requestMicrophoneAccess,
+    updateUserRole,
     toggleMute,
     stopAudio,
     enableSpeaking,
@@ -353,8 +424,10 @@ export function useAudio() {
       localStream: null,
       isMuted: true,
       audioLevel: 0,
+      userRole: 'listener',
       isWebRTCSupported: false,
       requestMicrophoneAccess: () => Promise.resolve(null),
+      updateUserRole: () => {},
       toggleMute: () => {},
       stopAudio: () => {},
       enableSpeaking: () => {},
