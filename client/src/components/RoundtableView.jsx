@@ -1,6 +1,6 @@
 import React, { useContext } from 'react'
 import LiveAudioLevelBar from './LiveAudioLevelBar'
-import { AudioContext } from '../contexts/AudioContext'
+import { useAudio } from '../contexts/AudioContext'
 import { Brain } from 'lucide-react'
 
 /**
@@ -8,8 +8,8 @@ import { Brain } from 'lucide-react'
  * Visual representation of the roundtable with participants arranged in a circle
  */
 function RoundtableView({ participants, currentSpeaker, currentTopic, discussionStarted }) {
-  // Get remote streams from AudioContext (assume a map: peerSocketId -> MediaStream)
-  const audioCtx = useContext(AudioContext)
+  // Get audio context using custom hook
+  const audioCtx = useAudio()
   // You may need to adjust this depending on how remote streams are tracked in AudioContext
   const remoteStreams = audioCtx?.remoteStreams || {}
   /**
