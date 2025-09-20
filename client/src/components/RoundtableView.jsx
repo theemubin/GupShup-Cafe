@@ -1,4 +1,6 @@
-import React from 'react'
+import React, { useContext } from 'react'
+import LiveAudioLevelBar from './LiveAudioLevelBar'
+import { AudioContext } from '../contexts/AudioContext'
 import { Brain } from 'lucide-react'
 
 /**
@@ -6,6 +8,10 @@ import { Brain } from 'lucide-react'
  * Visual representation of the roundtable with participants arranged in a circle
  */
 function RoundtableView({ participants, currentSpeaker, currentTopic, discussionStarted }) {
+  // Get remote streams from AudioContext (assume a map: peerSocketId -> MediaStream)
+  const audioCtx = useContext(AudioContext)
+  // You may need to adjust this depending on how remote streams are tracked in AudioContext
+  const remoteStreams = audioCtx?.remoteStreams || {}
   /**
    * Calculate position for each chair around the circle
    * @param {number} index - Participant index
@@ -77,6 +83,13 @@ function RoundtableView({ participants, currentSpeaker, currentTopic, discussion
         }`}>
           {participant.role === 'speaker' ? '🎤' : '👂'}
         </div>
+
+        {/* Incoming Audio Level Indicator (if remote stream available) */}
+        {remoteStreams[participant.socketId] && (
+          <div className="absolute left-1/2 -bottom-6 -translate-x-1/2 w-10">
+            <LiveAudioLevelBar stream={remoteStreams[participant.socketId]} showLabel={false} />
+          </div>
+        )}
 
         {/* Name Label */}
         <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 

@@ -13,6 +13,17 @@ const AudioContext = createContext()
  * Manages audio state and WebRTC functionality
  */
 export function AudioProvider({ children }) {
+  useEffect(() => {
+    if (socket) {
+      console.log('[Audio][Debug] Socket object available', socket)
+      socket.on('connect', () => {
+        console.log('[Audio][Debug] Socket connected:', socket.id)
+      })
+      socket.on('disconnect', () => {
+        console.log('[Audio][Debug] Socket disconnected')
+      })
+    }
+  }, [socket])
   const [audioEnabled, setAudioEnabled] = useState(false)
   const [micPermission, setMicPermission] = useState(null) // null, 'granted', 'denied'
   const [localStream, setLocalStream] = useState(null)
@@ -340,10 +351,10 @@ export function AudioProvider({ children }) {
     // Handle incoming remote streams (from broadcast test pattern)
     pc.ontrack = (event) => {
       try {
-        console.log(`[Audio] Received remote stream from ${peerSocketId}`)
+        console.log(`[Audio][Debug] ontrack event for peer: ${peerSocketId}`)
         const remoteStream = event.streams[0]
-        
         if (remoteStream) {
+          console.log(`[Audio][Debug] Remote stream received for peer: ${peerSocketId}`, remoteStream)
           // Create audio element for remote stream (simplified from broadcast test)
           const audioElement = document.createElement('audio')
           audioElement.srcObject = remoteStream
@@ -351,7 +362,7 @@ export function AudioProvider({ children }) {
           audioElement.controls = false
           audioElement.id = `remote-audio-${peerSocketId}`
           audioElement.volume = 1.0
-          
+
           // Add to DOM (hidden container)
           let container = document.getElementById('remote-audio-container')
           if (!container) {
@@ -359,31 +370,33 @@ export function AudioProvider({ children }) {
             container.id = 'remote-audio-container'
             container.style.display = 'none'
             document.body.appendChild(container)
+            console.log('[Audio][Debug] Created remote-audio-container in DOM')
           }
-          
+
           // Remove old audio element if exists
           const oldElement = document.getElementById(`remote-audio-${peerSocketId}`)
           if (oldElement) {
             oldElement.remove()
+            console.log(`[Audio][Debug] Removed old audio element for peer ${peerSocketId}`)
           }
-          
+
           container.appendChild(audioElement)
-          console.log(`[Audio] Created audio element for peer ${peerSocketId}`)
-          
+          console.log(`[Audio][Debug] Created and appended audio element for peer ${peerSocketId}`)
+
           // Try to play with error handling
           const playAttempt = audioElement.play()
           if (playAttempt && typeof playAttempt.catch === 'function') {
             playAttempt
                 .then(() => {
-                  console.log(`Successfully playing audio from ${peerSocketId}`)
+                  console.log(`[Audio][Debug] Successfully playing audio from ${peerSocketId}`)
                 })
                 .catch((error) => {
-                  console.warn(`Autoplay blocked for ${peerSocketId}:`, error.message)
+                  console.warn(`[Audio][Debug] Autoplay blocked for ${peerSocketId}:`, error.message)
                   // Add click listener to enable audio on user interaction
                   const enableAudio = () => {
                     audioElement.play()
                       .then(() => {
-                        console.log(`Audio started after user interaction for ${peerSocketId}`)
+                        console.log(`[Audio][Debug] Audio started after user interaction for ${peerSocketId}`)
                         document.removeEventListener('click', enableAudio)
                       })
                       .catch(console.error)
@@ -391,9 +404,11 @@ export function AudioProvider({ children }) {
                   document.addEventListener('click', enableAudio, { once: true })
                 })
           }
+        } else {
+          console.warn(`[Audio][Debug] No remoteStream found in ontrack for peer: ${peerSocketId}`)
         }
       } catch (err) {
-        console.error(`Error handling ontrack event for ${peerSocketId}:`, err)
+        console.error(`[Audio][Debug] Error handling ontrack event for ${peerSocketId}:`, err)
       }
     }
 

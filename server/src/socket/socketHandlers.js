@@ -286,31 +286,32 @@ export function setupSocketHandlers(io) {
     })
 
       /**
-       * Simple WebRTC signaling passthrough
+       * Simple WebRTC signaling passthrough (main app)
        * These events relay SDP and ICE messages to the intended peer socket id
+       * Use 'targetSocketId' for consistency with frontend and broadcast test
        */
-      socket.on('webrtc-offer', ({ to, sdp }) => {
+      socket.on('webrtc-offer', ({ targetSocketId, offer }) => {
         try {
-          if (!to) return
-          io.to(to).emit('webrtc-offer', { from: socket.id, sdp })
+          if (!targetSocketId) return
+          io.to(targetSocketId).emit('webrtc-offer', { fromSocketId: socket.id, offer })
         } catch (err) {
           console.error('Error relaying webrtc-offer:', err)
         }
       })
 
-      socket.on('webrtc-answer', ({ to, sdp }) => {
+      socket.on('webrtc-answer', ({ targetSocketId, answer }) => {
         try {
-          if (!to) return
-          io.to(to).emit('webrtc-answer', { from: socket.id, sdp })
+          if (!targetSocketId) return
+          io.to(targetSocketId).emit('webrtc-answer', { fromSocketId: socket.id, answer })
         } catch (err) {
           console.error('Error relaying webrtc-answer:', err)
         }
       })
 
-      socket.on('webrtc-ice-candidate', ({ to, candidate }) => {
+      socket.on('webrtc-ice-candidate', ({ targetSocketId, candidate }) => {
         try {
-          if (!to) return
-          io.to(to).emit('webrtc-ice-candidate', { from: socket.id, candidate })
+          if (!targetSocketId) return
+          io.to(targetSocketId).emit('webrtc-ice-candidate', { fromSocketId: socket.id, candidate })
         } catch (err) {
           console.error('Error relaying ice candidate:', err)
         }
