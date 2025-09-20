@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { inject } from '@vercel/speed-insights/react'
+import { injectSpeedInsights } from '@vercel/speed-insights'
 import App from './App.jsx'
 import './index.css'
 
@@ -11,7 +11,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 )
 
 // Inject Vercel Speed Insights for performance monitoring
-inject()
+injectSpeedInsights()
 
 // Force new deployment - socket context fixes applied
 /* Build timestamp: Thu Sep 18 20:00:33 IST 2025 */
