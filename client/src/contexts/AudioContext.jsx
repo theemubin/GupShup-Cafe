@@ -32,8 +32,8 @@ export function AudioProvider({ children }) {
     
     // Only speakers can request microphone access
     if (effectiveRole !== 'speaker') {
-      console.log('[Audio] Microphone access denied - user is not a speaker')
-      setMicPermission('denied')
+      console.log('[Audio] Microphone access not needed - user is not a speaker')
+      setMicPermission('not-needed')
       return null
     }
     try {

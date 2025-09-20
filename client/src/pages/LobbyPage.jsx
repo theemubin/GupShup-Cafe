@@ -17,7 +17,9 @@ function LobbyPage() {
     audioEnabled, 
     micPermission, 
     requestMicrophoneAccess, 
-    isWebRTCSupported 
+    isWebRTCSupported,
+    userRole,
+    updateUserRole
   } = useAudio()
   
   const [
@@ -141,6 +143,14 @@ function LobbyPage() {
     fetchConfig()
   }, [])
 
+  // Sync role between lobby selection and audio context
+  useEffect(() => {
+    if (updateUserRole && selectedRole !== userRole) {
+      console.log(`[Lobby] Syncing role from ${userRole} to ${selectedRole}`)
+      updateUserRole(selectedRole)
+    }
+  }, [selectedRole, userRole, updateUserRole])
+
   /**
    * Format waiting time as MM:SS
    */
@@ -171,7 +181,13 @@ function LobbyPage() {
       return
     }
 
-    await requestMicrophoneAccess()
+    // Ensure we're requesting as a speaker
+    if (selectedRole !== 'speaker') {
+      console.warn('[Lobby] Trying to enable microphone but not a speaker')
+      return
+    }
+
+    await requestMicrophoneAccess('speaker')
   }
 
   /**
@@ -318,7 +334,7 @@ function LobbyPage() {
             </div>
 
             {/* Audio Setup */}
-            {!audioEnabled && (
+            {selectedRole === 'speaker' && !audioEnabled && (
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Audio Setup</h3>
                 
@@ -354,6 +370,22 @@ function LobbyPage() {
                     </button>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Audio Setup for Listeners */}
+            {selectedRole === 'listener' && (
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Audio Setup</h3>
+                <div className="text-center py-4">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full mx-auto mb-2 flex items-center justify-center">
+                    👂
+                  </div>
+                  <p className="text-blue-600 font-medium">Listener Mode Active</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    You'll receive audio from speakers without needing microphone access
+                  </p>
+                </div>
               </div>
             )}
           </div>
