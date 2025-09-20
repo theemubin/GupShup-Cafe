@@ -220,8 +220,11 @@ export function AudioProvider({ children }) {
     // When a new participant list arrives, attempt to establish peer connections
     socket.on('participants-update', (updatedParticipants) => {
       try {
+        console.log(`[Audio] Participants update received. Total: ${updatedParticipants.length}, My role: ${userRole}, Local stream: ${!!localStream}`)
         const otherPeers = updatedParticipants.filter(p => p.socketId && p.socketId !== socket.id)
+        console.log(`[Audio] Other peers: ${otherPeers.length}`)
         otherPeers.forEach(p => {
+          console.log(`[Audio] Processing peer ${p.socketId}, role: ${p.role || 'unknown'}`)
           // Only create connections if we are a speaker with local stream, or if the other peer is a speaker
           if (!peers[p.socketId]) {
             const pc = createPeerConnection(p.socketId, socket)

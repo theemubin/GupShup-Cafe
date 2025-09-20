@@ -20,21 +20,8 @@ function RoundtablePage() {
   const { user, anonymousName, logout } = useAuth()
   const { enableSpeaking, disableSpeaking, enableAudioPlayback, userRole } = useAudio()
 
-  // Join room on mount to receive participants-update
-  useEffect(() => {
-    if (socket && user) {
-      // Use 'general' as default room, or pass actual roomId if available
-      socket.emit('join-room', 'general', {
-        userId: user.id,
-        name: user.name,
-        campus: user.campus,
-        location: user.location,
-        anonymousName: anonymousName,
-        role: userRole || 'listener'
-      });
-      console.log('[Roundtable][Debug] Emitted join-room from RoundtablePage');
-    }
-  }, [socket, user, anonymousName]);
+  // Note: Room joining is handled by LobbyPage, no need to rejoin here
+  // This prevents duplicate join-room events and state conflicts
 
   // Discussion state
   const [participants, setParticipants] = useState([])

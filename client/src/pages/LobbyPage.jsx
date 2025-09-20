@@ -30,6 +30,7 @@ function LobbyPage() {
   const [isReady, setIsReady] = useState(false)
   const [waitingTime, setWaitingTime] = useState(0)
   const [systemMessage, setSystemMessage] = useState('Connecting to lobby...')
+  const [isNavigating, setIsNavigating] = useState(false)
 
   // Timer for waiting time
   useEffect(() => {
@@ -92,11 +93,14 @@ function LobbyPage() {
     // Handle discussion start
     socket.on('discussion-started', () => {
       console.log('[Lobby][Debug] Received discussion-started event - navigating to /roundtable')
-      setSystemMessage('Discussion starting! Redirecting to roundtable...')
-      setTimeout(() => {
-        console.log('[Lobby][Debug] Navigating to /roundtable now')
-        navigate('/roundtable')
-      }, 2000)
+      if (!isNavigating) {
+        setIsNavigating(true)
+        setSystemMessage('Discussion starting! Redirecting to roundtable...')
+        setTimeout(() => {
+          console.log('[Lobby][Debug] Navigating to /roundtable now')
+          navigate('/roundtable')
+        }, 1000) // Reduced delay
+      }
     })
 
     // Handle user ready status
