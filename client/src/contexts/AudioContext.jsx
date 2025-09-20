@@ -464,9 +464,13 @@ export function AudioProvider({ children }) {
   useEffect(() => {
     if (socket && connected) {
       setupPeerSignaling()
+      
+      // Signal readiness for WebRTC connections (both speakers and listeners)
+      console.log(`[Audio] Signaling WebRTC readiness as ${userRole}`)
+      socket.emit('ready-for-webrtc')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [socket, connected])
+  }, [socket, connected, userRole])
 
   // Check for browser support
   const isWebRTCSupported = () => {

@@ -100,8 +100,18 @@ function LoginPage() {
       // Extract user data and anonymous name
       const { anonymousName, ...userData } = formData
       
+      // Generate device-specific unique ID to prevent conflicts across devices
+      const deviceId = localStorage.getItem('device-id') || 
+        Math.random().toString(36).substring(2) + Date.now().toString(36)
+      localStorage.setItem('device-id', deviceId)
+      
+      const uniqueUserData = {
+        ...userData,
+        id: `${userData.id}-${deviceId}` // Make ID unique per device
+      }
+      
       // Login with the provided data
-      login(userData, anonymousName)
+      login(uniqueUserData, anonymousName)
       
       // Navigate to lobby
       navigate('/lobby')
