@@ -116,15 +116,13 @@ function ParticipantControls({
         <div className="flex items-center space-x-4">
           <button
             onClick={toggleMute}
-            disabled={!audioEnabled || micPermission === 'denied' || !isCurrentUserSpeaking}
+            disabled={!audioEnabled || micPermission === 'denied'}
             className={`flex-1 flex items-center justify-center space-x-2 py-3 px-4 rounded-lg 
                        text-white font-medium transition-all ${getMicButtonStyle()}`}
             title={
               !audioEnabled || micPermission === 'denied'
                 ? 'Microphone not available'
-                : isCurrentUserSpeaking
-                  ? (isMuted ? 'Click to unmute' : 'Click to mute')
-                  : 'Wait for your turn'
+                : (isMuted ? 'Click to unmute' : 'Click to mute')
             }
           >
             {!audioEnabled || micPermission === 'denied' ? (
@@ -137,9 +135,7 @@ function ParticipantControls({
             <span className="text-sm">
               {!audioEnabled || micPermission === 'denied'
                 ? 'No Mic Access'
-                : isCurrentUserSpeaking
-                  ? (isMuted ? 'Unmute' : 'Mute')
-                  : 'Waiting'
+                : (isMuted ? 'Unmute' : 'Mute')
               }
             </span>
           </button>

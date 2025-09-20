@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useSocket } from './SocketContext'
 
@@ -140,7 +139,7 @@ export function AudioProvider({ children }) {
   }
 
   /**
-   * Mute/unmute the microphone
+   * Mute/unmute the microphone (always available if mic is granted)
    */
   const toggleMute = () => {
     if (localStream) {
