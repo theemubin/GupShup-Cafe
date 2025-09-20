@@ -37,13 +37,26 @@ export function AudioProvider({ children }) {
       return null
     }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      // Audio-optimized constraints for voice communication
+      const audioConstraints = {
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true
-        } 
-      })
+          autoGainControl: true,
+          sampleRate: 48000, // High quality sample rate for Opus
+          sampleSize: 16,
+          channelCount: 1, // Mono for voice (saves bandwidth)
+          latency: 0.01, // Low latency for real-time communication
+          googEchoCancellation: true,
+          googAutoGainControl: true,
+          googNoiseSuppression: true,
+          googHighpassFilter: true,
+          googTypingNoiseDetection: true,
+          googAudioMirroring: false
+        }
+      }
+      
+      const stream = await navigator.mediaDevices.getUserMedia(audioConstraints)
       
       setLocalStream(stream)
       setMicPermission('granted')
@@ -162,8 +175,18 @@ export function AudioProvider({ children }) {
         }
         
         await pc.setRemoteDescription({ type: 'offer', sdp })
-        const answer = await pc.createAnswer()
-        await pc.setLocalDescription(answer)
+        
+        // Create answer with audio-only constraints
+        const answerOptions = {
+          offerToReceiveAudio: true,
+          offerToReceiveVideo: false, // Audio-only optimization
+          voiceActivityDetection: true
+        }
+        
+        const answer = await pc.createAnswer(answerOptions)
+        // Optimize SDP for audio-only
+        const optimizedAnswer = optimizeAudioSDP(answer)
+        await pc.setLocalDescription(optimizedAnswer)
         
         console.log(`Sending WebRTC answer to ${from}`)
         socket.emit('webrtc-answer', { to: from, sdp: answer.sdp })
@@ -210,11 +233,21 @@ export function AudioProvider({ children }) {
                 pc.addTrack(track, localStream)
               })
               
-              // Create and send offer since we have tracks to share
-              pc.createOffer()
-                .then(offer => pc.setLocalDescription(offer))
+              // Create and send offer with audio-only constraints
+              const offerOptions = {
+                offerToReceiveAudio: true,
+                offerToReceiveVideo: false, // Audio-only optimization
+                voiceActivityDetection: true
+              }
+              
+              pc.createOffer(offerOptions)
+                .then(offer => {
+                  // Optimize SDP for audio-only
+                  const optimizedOffer = optimizeAudioSDP(offer)
+                  return pc.setLocalDescription(optimizedOffer)
+                })
                 .then(() => {
-                  console.log(`Sending WebRTC offer to ${p.socketId}`)
+                  console.log(`Sending optimized WebRTC offer to ${p.socketId}`)
                   socket.emit('webrtc-offer', { to: p.socketId, sdp: pc.localDescription.sdp })
                 })
                 .catch(err => console.error('Error creating/sending offer:', err))
@@ -255,9 +288,69 @@ export function AudioProvider({ children }) {
     })
   }
 
+  /**
+   * Optimize SDP for audio-only communication
+   * @param {RTCSessionDescription} sessionDescription - Original SDP
+   * @returns {RTCSessionDescription} Optimized SDP
+   */
+  const optimizeAudioSDP = (sessionDescription) => {
+    let sdp = sessionDescription.sdp
+    
+    // Remove video-related lines
+    sdp = sdp.replace(/m=video.*\r?\n/g, '')
+    sdp = sdp.replace(/a=rtcp-fb:.*\r?\n/g, '')
+    sdp = sdp.replace(/a=fmtp:.*profile-level-id.*\r?\n/g, '')
+    
+    // Prioritize Opus codec for better voice quality
+    const opusCodecRegex = /a=rtpmap:(\d+) opus\/48000\/2\r?\n/
+    const opusMatch = sdp.match(opusCodecRegex)
+    
+    if (opusMatch) {
+      const opusPayloadType = opusMatch[1]
+      
+      // Find and modify m=audio line to prioritize Opus
+      const audioLineRegex = /m=audio \d+ UDP\/TLS\/RTP\/SAVPF (.+)\r?\n/
+      const audioMatch = sdp.match(audioLineRegex)
+      
+      if (audioMatch) {
+        const payloadTypes = audioMatch[1].split(' ')
+        const reorderedTypes = [opusPayloadType, ...payloadTypes.filter(pt => pt !== opusPayloadType)]
+        sdp = sdp.replace(audioLineRegex, `m=audio ${audioMatch[0].split(' ')[1]} UDP/TLS/RTP/SAVPF ${reorderedTypes.join(' ')}\r\n`)
+      }
+      
+      // Add Opus-specific optimizations
+      const opusSettings = `a=fmtp:${opusPayloadType} minptime=10;useinbandfec=1;usedtx=1\r\n`
+      if (!sdp.includes(opusSettings)) {
+        sdp = sdp.replace(opusMatch[0], opusMatch[0] + opusSettings)
+      }
+    }
+    
+    // Add audio quality settings
+    sdp += 'a=extmap:1 urn:ietf:params:rtp-hdrext:ssrc-audio-level\r\n'
+    
+    return new RTCSessionDescription({
+      type: sessionDescription.type,
+      sdp: sdp
+    })
+  }
+
   const createPeerConnection = (peerSocketId, socket) => {
-    const iceServers = [{ urls: 'stun:stun.l.google.com:19302' }]
-    const pc = new RTCPeerConnection({ iceServers })
+    const iceServers = [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' }
+    ]
+    
+    // Audio-optimized peer connection configuration
+    const config = {
+      iceServers,
+      iceCandidatePoolSize: 10,
+      bundlePolicy: 'balanced',
+      rtcpMuxPolicy: 'require',
+      // Audio-specific optimizations
+      sdpSemantics: 'unified-plan'
+    }
+    
+    const pc = new RTCPeerConnection(config)
 
     // send local ICE candidates to the peer via server
     pc.onicecandidate = (event) => {
