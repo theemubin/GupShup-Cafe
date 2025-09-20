@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { inject } from '@vercel/speed-insights'
+import { inject } from '@vercel/speed-insights/web'
 import App from './App.jsx'
 import './index.css'
 
