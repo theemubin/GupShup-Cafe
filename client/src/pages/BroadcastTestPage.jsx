@@ -41,6 +41,10 @@ export default function BroadcastTestPage() {
       socket.on('webrtc-offer', handleOffer)
       socket.on('webrtc-answer', handleAnswer)
       socket.on('webrtc-ice-candidate', handleIceCandidate)
+      socket.on('broadcast-test-reset', () => {
+        console.log('[BroadcastTest] Room was reset, refreshing...')
+        window.location.reload()
+      })
 
       return () => {
         socket.off('broadcast-test-role')
@@ -48,6 +52,7 @@ export default function BroadcastTestPage() {
         socket.off('webrtc-offer')
         socket.off('webrtc-answer')
         socket.off('webrtc-ice-candidate')
+        socket.off('broadcast-test-reset')
       }
     }
   }, [connected, socket])
@@ -331,6 +336,21 @@ export default function BroadcastTestPage() {
               ))}
             </div>
           )}
+          
+          {/* Reset Button */}
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => {
+                if (socket) {
+                  console.log('[BroadcastTest] Requesting room reset...')
+                  socket.emit('reset-broadcast-test')
+                }
+              }}
+              className="px-4 py-2 bg-red-500/20 border border-red-500/30 text-red-300 rounded-lg hover:bg-red-500/30 transition-colors text-sm"
+            >
+              🔄 Reset Room (if everyone is listener)
+            </button>
+          </div>
         </div>
 
         {/* Instructions */}

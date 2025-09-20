@@ -346,7 +346,12 @@ export function setupSocketHandlers(io) {
           participants: [],
           broadcaster: null
         }
+        console.log(`[BroadcastTest] Created new broadcast room`)
       }
+      
+      // Debug current room state
+      console.log(`[BroadcastTest] Current participants: ${global.broadcastTestRoom.participants.length}`)
+      console.log(`[BroadcastTest] Current broadcaster: ${global.broadcastTestRoom.broadcaster}`)
       
       // Determine role - first person is broadcaster
       const role = global.broadcastTestRoom.participants.length === 0 ? 'broadcaster' : 'listener'
@@ -387,6 +392,22 @@ export function setupSocketHandlers(io) {
     socket.on('broadcaster-ready', () => {
       console.log(`[BroadcastTest] Broadcaster ${socket.id} is ready`)
       // Broadcaster is ready to receive connections from listeners
+    })
+
+    /**
+     * Handle manual reset of broadcast test room
+     */
+    socket.on('reset-broadcast-test', () => {
+      console.log(`[BroadcastTest] ${socket.id} requested room reset`)
+      if (global.broadcastTestRoom) {
+        global.broadcastTestRoom = {
+          participants: [],
+          broadcaster: null
+        }
+        console.log(`[BroadcastTest] Room reset - all participants cleared`)
+        // Notify all users in broadcast-test room to refresh
+        io.to('broadcast-test').emit('broadcast-test-reset')
+      }
     })
 
     /**
