@@ -21,31 +21,29 @@ export function AudioProvider({ children }) {
   const [peers, setPeers] = useState({}) // map socketId -> RTCPeerConnection
   const [userRole, setUserRole] = useState('listener') // Track user's current role
   const { socket, connected } = useSocket()
+  const localStreamRef = React.useRef(null)
 
   /**
    * Request microphone permission and get audio stream
    * Only allowed for speakers
    */
-  const requestMicrophoneAccess = async (forceRole = null) => {
-    const effectiveRole = forceRole || userRole
-    
-    // Only speakers can request microphone access
-    if (effectiveRole !== 'speaker') {
-      console.log('[Audio] Microphone access not needed - user is not a speaker')
-      setMicPermission('not-needed')
-      return null
+  // Request microphone access and set up local stream ONCE per session
+  const requestMicrophoneAccess = async () => {
+    if (localStreamRef.current) {
+      setMicPermission('granted')
+      setAudioEnabled(true)
+      return localStreamRef.current
     }
     try {
-      // Audio-optimized constraints for voice communication
       const audioConstraints = {
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
-          sampleRate: 48000, // High quality sample rate for Opus
+          sampleRate: 48000,
           sampleSize: 16,
-          channelCount: 1, // Mono for voice (saves bandwidth)
-          latency: 0.01, // Low latency for real-time communication
+          channelCount: 1,
+          latency: 0.01,
           googEchoCancellation: true,
           googAutoGainControl: true,
           googNoiseSuppression: true,
@@ -54,21 +52,15 @@ export function AudioProvider({ children }) {
           googAudioMirroring: false
         }
       }
-      
       const stream = await navigator.mediaDevices.getUserMedia(audioConstraints)
-      
+      localStreamRef.current = stream
       setLocalStream(stream)
       setMicPermission('granted')
       setAudioEnabled(true)
-      
-      // Set up audio level monitoring
       setupAudioLevelMonitoring(stream)
-
-      // If we have a socket connection, start signaling to peers
       if (socket && connected) {
         socket.emit('ready-for-webrtc')
       }
-      
       return stream
     } catch (error) {
       console.error('Error accessing microphone:', error)
@@ -82,30 +74,14 @@ export function AudioProvider({ children }) {
    * Update user role and handle audio stream accordingly
    * @param {string} newRole - New role ('speaker' or 'listener')
    */
+  // Only update role, do not destroy local stream
   const updateUserRole = async (newRole) => {
     console.log(`[Audio] Updating user role from ${userRole} to ${newRole}`)
-    const oldRole = userRole
     setUserRole(newRole)
-
-    if (newRole === 'speaker' && oldRole === 'listener') {
-      // Promote to speaker - request microphone access
-      console.log('[Audio] Promoted to speaker - requesting microphone access')
-      await requestMicrophoneAccess('speaker')
-    } else if (newRole === 'listener' && oldRole === 'speaker') {
-      // Demote to listener - stop local stream
-      console.log('[Audio] Demoted to listener - stopping microphone stream')
-      if (localStream) {
-        localStream.getTracks().forEach(track => track.stop())
-        setLocalStream(null)
-        setAudioEnabled(false)
-        setMicPermission(null)
-        setAudioLevel(0)
-      }
-      
-      // Close all peer connections as we're no longer publishing
-      Object.values(peers).forEach(pc => pc.close())
-      setPeers({})
+    if (newRole === 'speaker') {
+      await requestMicrophoneAccess()
     }
+    // Do not stop or destroy the local stream on demotion
   }
 
   /**
@@ -142,8 +118,9 @@ export function AudioProvider({ children }) {
    * Mute/unmute the microphone (always available if mic is granted)
    */
   const toggleMute = () => {
-    if (localStream) {
-      const audioTracks = localStream.getAudioTracks()
+    const stream = localStreamRef.current || localStream
+    if (stream) {
+      const audioTracks = stream.getAudioTracks()
       audioTracks.forEach(track => {
         track.enabled = isMuted
       })
@@ -435,8 +412,9 @@ export function AudioProvider({ children }) {
    * Stop audio stream and cleanup
    */
   const stopAudio = () => {
-    if (localStream) {
-      localStream.getTracks().forEach(track => track.stop())
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(track => track.stop())
+      localStreamRef.current = null
       setLocalStream(null)
     }
     setAudioEnabled(false)
@@ -468,6 +446,13 @@ export function AudioProvider({ children }) {
       stopAudio()
     }
   }, [])
+
+  // On mount, set up local stream ONCE if user is speaker
+  useEffect(() => {
+    if (userRole === 'speaker' && !localStreamRef.current) {
+      requestMicrophoneAccess()
+    }
+  }, [userRole])
 
   // Setup peer signaling when socket is available
   useEffect(() => {
