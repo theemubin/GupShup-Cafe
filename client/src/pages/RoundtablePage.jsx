@@ -34,9 +34,10 @@ function RoundtablePage() {
   const [round, setRound] = useState(1)
   
   // UI state
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(true); // Start in loading state
   const [error, setError] = useState(null)
   const [showAudioEnablePrompt, setShowAudioEnablePrompt] = useState(false)
+  const [topic, setTopic] = useState({ title: 'Welcome', description: 'Waiting for topic...' })
 
   // Clear navigation state when roundtable page successfully mounts
   useEffect(() => {
@@ -48,36 +49,26 @@ function RoundtablePage() {
     }
   }, [])
 
+  // When the page loads, the discussion is considered started.
+  useEffect(() => {
+    setDiscussionStarted(true);
+    setIsLoading(false);
+    // Clear the navigation flag from the lobby to prevent loops on refresh
+    sessionStorage.removeItem('roundtable-navigating');
+  }, []);
+
   // Socket event handlers
   useEffect(() => {
     if (!socket) return
 
-    // Handle participants update
-    socket.on('participants-update', (updatedParticipants) => {
+    const handleParticipantsUpdate = (updatedParticipants) => {
+      console.log('[Roundtable] Participants updated:', updatedParticipants);
       setParticipants(updatedParticipants)
-      setIsLoading(false)
-    })
+    };
 
-    // Handle new topic
-    socket.on('new-topic', (topic) => {
-      setCurrentTopic(topic)
-    })
-
-    // Handle discussion start
-    socket.on('discussion-started', ({ topic, firstSpeaker, duration }) => {
-      setCurrentTopic(topic)
-      setCurrentSpeaker(firstSpeaker)
-      setTimeRemaining(duration)
-      setSpeakingDuration(duration)
-      setDiscussionStarted(true)
-      setIsLoading(false)
-    })
-
-    // Handle speaker change
-    socket.on('speaker-changed', ({ speaker, timeRemaining: time, round: currentRound }) => {
+    const handleSpeakerChange = (speaker) => {
+      console.log('[Roundtable] Speaker changed:', speaker);
       setCurrentSpeaker(speaker)
-      setTimeRemaining(time)
-      setRound(currentRound)
       
       // Enable/disable speaking based on if current user is the speaker
       if (speaker && speaker.id === user?.id) {
@@ -85,62 +76,25 @@ function RoundtablePage() {
       } else {
         disableSpeaking()
       }
-    })
+    };
 
-    // Handle timer updates
-    socket.on('timer-update', (time) => {
-      setTimeRemaining(time)
-    })
+    const handleTopicUpdate = (newTopic) => {
+      console.log('[Roundtable] Topic updated:', newTopic);
+      setTopic(newTopic);
+    };
 
-        // Handle discussion end
-    socket.on('discussion-ended', () => {
-      setDiscussionEnded(true)
-      setCurrentSpeaker(null)
-      setTimeRemaining(0)
-      disableSpeaking()
-    })
+    // No longer need a 'discussion-started' listener here
 
-    // Handle role change responses
-    socket.on('role-change-success', ({ newRole }) => {
-      console.log(`[Roundtable] Role successfully changed to ${newRole}`)
-    })
+    socket.on('participants-update', handleParticipantsUpdate);
+    socket.on('speaker-changed', handleSpeakerChange);
+    socket.on('topic-update', handleTopicUpdate);
 
-    socket.on('role-change-error', ({ message }) => {
-      console.error(`[Roundtable] Role change failed: ${message}`)
-      setError(`Failed to change role: ${message}`)
-      // Clear error after 3 seconds
-      setTimeout(() => setError(null), 3000)
-    })
-
-    // Handle user disconnection
-    socket.on('user-disconnected', ({ userId, participants: updatedParticipants }) => {
-      setParticipants(updatedParticipants)
-      
-      // If discussion has no participants, redirect back to lobby
-      if (updatedParticipants.length < 1) {
-        setTimeout(() => {
-          navigate('/lobby')
-        }, 3000)
-      }
-    })
-
-    // Handle errors
-    socket.on('error', (errorMessage) => {
-      setError(errorMessage)
-    })
-
-    // Cleanup
     return () => {
-      socket.off('participants-update')
-      socket.off('new-topic')
-      socket.off('discussion-started')
-      socket.off('speaker-changed')
-      socket.off('timer-update')
-      socket.off('discussion-ended')
-      socket.off('user-disconnected')
-      socket.off('error')
-    }
-  }, [socket, user, enableSpeaking, disableSpeaking, navigate])
+      socket.off('participants-update', handleParticipantsUpdate);
+      socket.off('speaker-changed', handleSpeakerChange);
+      socket.off('topic-update', handleTopicUpdate);
+    };
+  }, [socket, user, enableSpeaking, disableSpeaking])
 
   // Auto-redirect if not connected or no participants
   useEffect(() => {

@@ -161,7 +161,7 @@ function LobbyPage() {
       socket.off('connect')
       socket.off('disconnect')
       socket.off('participants-update')
-      socket.off('discussion-starting')
+      socket.off('discussion-started')
       socket.off('user-ready-update')
       socket.off('system-message')
     }
