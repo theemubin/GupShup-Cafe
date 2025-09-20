@@ -36,9 +36,20 @@ if (process.env.ALLOWED_ORIGINS) {
 } else if (process.env.CORS_ORIGIN) { // legacy / guide variable name
   configuredOrigins = [process.env.CORS_ORIGIN]
 }
-// Always include localhost defaults for dev unless explicitly disabled
-const defaultDevOrigins = ['http://localhost:5173', 'http://localhost:5174']
-const ALLOWED_ORIGINS = Array.from(new Set([...(configuredOrigins.length ? configuredOrigins : defaultDevOrigins)]))
+
+// Default origins for development and production
+const defaultDevOrigins = ['http://localhost:5173', 'http://localhost:5174'];
+const defaultProdOrigins = [
+  'https://gup-shup-cafe.vercel.app', // Your production frontend
+  /\.vercel\.app$/, // Allow any Vercel preview deployments
+];
+
+const isProduction = process.env.NODE_ENV === 'production';
+
+const ALLOWED_ORIGINS = Array.from(new Set([
+  ...(configuredOrigins.length ? configuredOrigins : []),
+  ...(isProduction ? defaultProdOrigins : defaultDevOrigins)
+]));
 
 // Socket.io setup with CORS
 const io = new Server(server, {
@@ -46,26 +57,40 @@ const io = new Server(server, {
     origin: ALLOWED_ORIGINS,
     methods: ['GET', 'POST'],
     credentials: true
-  }
-})
+  },
+  // Add robust error handling for Socket.io
+  transports: ['websocket', 'polling'],
+  allowEIO3: true
+});
 
 // Middleware
 app.use(helmet({
-  contentSecurityPolicy: false // Disable for development
-}))
+  contentSecurityPolicy: false // Consider configuring this properly for production
+}));
 
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
-    if (ALLOWED_ORIGINS.includes(origin)) {
+
+    // Check if origin is in the allowed list (handles strings and regex)
+    const isAllowed = ALLOWED_ORIGINS.some(allowedOrigin => {
+      if (allowedOrigin instanceof RegExp) {
+        return allowedOrigin.test(origin);
+      }
+      return allowedOrigin === origin;
+    });
+
+    if (isAllowed) {
       return callback(null, true);
     } else {
+      console.error(`CORS Error: Origin ${origin} not allowed.`);
+      // Instead of throwing an error that crashes the server, just deny the request
       return callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true
-}))
+}));
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
