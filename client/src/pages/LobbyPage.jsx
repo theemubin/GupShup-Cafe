@@ -1,9 +1,14 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSocket } from '../contexts/SocketContext'
 import { useAuth } from '../contexts/AuthContext'
 import { useAudio } from '../contexts/AudioContext'
 import { Users, Clock, Mic, MicOff, LogOut, Settings } from 'lucide-react'
+
+// Global flag to prevent multiple late join checks (accessible across components)
+if (typeof window !== 'undefined') {
+  window.lateJoinCheckInProgress = window.lateJoinCheckInProgress || false
+}
 
 /**
  * Lobby Page Component
@@ -32,47 +37,84 @@ function LobbyPage() {
   const [systemMessage, setSystemMessage] = useState('Connecting to lobby...')
   const [isNavigating, setIsNavigating] = useState(false)
 
-  // Timer for waiting time
+  // Timer for waiting time and late join check
   useEffect(() => {
+    // Disable late join check in development to prevent loops
+    const isDevelopment = import.meta.env.DEV || window.location.hostname === 'localhost'
+    if (isDevelopment) {
+      console.log('[Lobby][Debug] Development mode - disabling auto late join navigation')
+      // Just start the timer, skip late join check
+      const timer = setInterval(() => {
+        setWaitingTime(prev => prev + 1)
+      }, 1000)
+      return () => clearInterval(timer)
+    }
+
+    // Production late join logic
+    const persistentNavigating = sessionStorage.getItem('roundtable-navigating')
+    if (isNavigating || persistentNavigating === 'true' || window.lateJoinCheckInProgress) {
+      console.log('[Lobby][Debug] Navigation already in progress, skipping late join check')
+      return
+    }
+
     // Late join: check if discussion is already active
     const checkDiscussionState = async () => {
+      if (window.lateJoinCheckInProgress) {
+        console.log('[Lobby][Debug] Late join check already in progress')
+        return
+      }
+      
+      window.lateJoinCheckInProgress = true
+      
       try {
         const apiUrl = import.meta.env.VITE_API_URL || '';
         console.log(`[Lobby][Debug] Fetching ${apiUrl}/api/room/${roomId}/state for late join check`)
         const res = await fetch(`${apiUrl}/api/room/${roomId}/state`)
         const json = await res.json()
         console.log('[Lobby][Debug] Room state response:', json)
+        
         if (json?.discussion?.active) {
-          console.log('[Lobby][Debug] Late join detected - navigating to /roundtable')
-          navigate('/roundtable')
+          console.log('[Lobby][Debug] Late join detected - navigating to /roundtable') 
+          setIsNavigating(true)
+          sessionStorage.setItem('roundtable-navigating', 'true')
+          navigate('/roundtable', { replace: true })
+          return
         } else {
           console.log('[Lobby][Debug] Room state: discussion not active')
+          window.lateJoinCheckInProgress = false
         }
       } catch (err) {
         console.warn('[Lobby][Debug] Failed to check room state for late join', err)
+        window.lateJoinCheckInProgress = false
       }
     }
+    
     checkDiscussionState()
+    
     const timer = setInterval(() => {
-      setWaitingTime(prev => prev + 1)
+      if (!isNavigating && !window.lateJoinCheckInProgress) {
+        setWaitingTime(prev => prev + 1)
+      }
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [])
+  }, [roomId, isNavigating, navigate])
 
   // Socket event handlers
   useEffect(() => {
-    if (!socket) {
-      console.log('[Lobby][Debug] Socket not available')
+    if (!socket || isNavigating) {
+      console.log('[Lobby][Debug] Socket not available or navigating')
       return
     }
 
     console.log('[Lobby][Debug] Socket available, connected:', connected)
     // Socket connect/disconnect events
     socket.on('connect', () => {
-      console.log('[Lobby][Debug] Socket connected:', socket.id)
-      console.log(`[Lobby][Debug] Calling joinRoom with roomId: ${roomId}, role: ${selectedRole} (on connect)`)
-      joinRoom(roomId, selectedRole)
+      if (!isNavigating) {
+        console.log('[Lobby][Debug] Socket connected:', socket.id)
+        console.log(`[Lobby][Debug] Calling joinRoom with roomId: ${roomId}, role: ${selectedRole} (on connect)`)
+        joinRoom(roomId, selectedRole)
+      }
     })
     socket.on('disconnect', () => {
       console.log('[Lobby][Debug] Socket disconnected')
@@ -96,10 +138,8 @@ function LobbyPage() {
       if (!isNavigating) {
         setIsNavigating(true)
         setSystemMessage('Discussion starting! Redirecting to roundtable...')
-        setTimeout(() => {
-          console.log('[Lobby][Debug] Navigating to /roundtable now')
-          navigate('/roundtable')
-        }, 1000) // Reduced delay
+        console.log('[Lobby][Debug] Navigating to /roundtable now')
+        navigate('/roundtable', { replace: true })
       }
     })
 
@@ -125,7 +165,7 @@ function LobbyPage() {
       socket.off('user-ready-update')
       socket.off('system-message')
     }
-  }, [socket, joinRoom, roomId, selectedRole, navigate, connected])
+  }, [socket, joinRoom, roomId, selectedRole, navigate, connected, isNavigating])
 
   // Fetch server-side configuration (minParticipants, etc.)
   useEffect(() => {
@@ -203,6 +243,18 @@ function LobbyPage() {
   }
 
   const canStart = participants.length >= minParticipants && audioEnabled
+
+  // Show loading state while navigating
+  if (isNavigating) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">{systemMessage}</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen flex flex-col">

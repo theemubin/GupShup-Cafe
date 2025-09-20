@@ -38,6 +38,16 @@ function RoundtablePage() {
   const [error, setError] = useState(null)
   const [showAudioEnablePrompt, setShowAudioEnablePrompt] = useState(false)
 
+  // Clear navigation state when roundtable page successfully mounts
+  useEffect(() => {
+    console.log('[Roundtable] Page mounted - clearing navigation state')
+    sessionStorage.removeItem('roundtable-navigating')
+    // Clear global flag by importing and resetting it
+    if (window.lateJoinCheckInProgress !== undefined) {
+      window.lateJoinCheckInProgress = false
+    }
+  }, [])
+
   // Socket event handlers
   useEffect(() => {
     if (!socket) return

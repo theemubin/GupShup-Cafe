@@ -164,14 +164,14 @@ export function AudioProvider({ children }) {
         console.log(`Received WebRTC offer from ${from}`)
         const pc = createPeerConnection(from, socket)
         
-        // Add local stream tracks only if we're a speaker
+        // Add local stream tracks if we're a speaker (simplified from broadcast test)
         if (localStream && userRole === 'speaker') {
+          console.log(`[Audio] Adding ${localStream.getTracks().length} tracks to peer ${from}`)
           localStream.getTracks().forEach(track => {
-            console.log(`Adding track ${track.kind} to answer peer ${from}`)
             pc.addTrack(track, localStream)
           })
-        } else if (userRole === 'listener') {
-          console.log('Listener receiving offer - will answer without adding tracks')
+        } else {
+          console.log(`[Audio] Not adding tracks - Role: ${userRole}, Stream: ${!!localStream}`)
         }
         
         await pc.setRemoteDescription({ type: 'offer', sdp })
@@ -184,9 +184,8 @@ export function AudioProvider({ children }) {
         }
         
         const answer = await pc.createAnswer(answerOptions)
-        // Optimize SDP for audio-only
-        const optimizedAnswer = optimizeAudioSDP(answer)
-        await pc.setLocalDescription(optimizedAnswer)
+        // Set local description (simplified from broadcast test)
+        await pc.setLocalDescription(answer)
         
         console.log(`Sending WebRTC answer to ${from}`)
         socket.emit('webrtc-answer', { to: from, sdp: answer.sdp })
@@ -229,10 +228,10 @@ export function AudioProvider({ children }) {
           if (!peers[p.socketId]) {
             const pc = createPeerConnection(p.socketId, socket)
             
-            // Only add our tracks if we're a speaker with a local stream
+            // Add our tracks if we're a speaker (simplified from broadcast test)  
             if (localStream && userRole === 'speaker') {
+              console.log(`[Audio] Adding ${localStream.getTracks().length} tracks to peer ${p.socketId}`)
               localStream.getTracks().forEach(track => {
-                console.log(`Adding track ${track.kind} to peer ${p.socketId}`)
                 pc.addTrack(track, localStream)
               })
               
@@ -245,9 +244,8 @@ export function AudioProvider({ children }) {
               
               pc.createOffer(offerOptions)
                 .then(offer => {
-                  // Optimize SDP for audio-only
-                  const optimizedOffer = optimizeAudioSDP(offer)
-                  return pc.setLocalDescription(optimizedOffer)
+                  // Set local description (simplified from broadcast test)
+                  return pc.setLocalDescription(offer)
                 })
                 .then(() => {
                   console.log(`Sending optimized WebRTC offer to ${p.socketId}`)
@@ -318,7 +316,8 @@ export function AudioProvider({ children }) {
       if (audioMatch) {
         const payloadTypes = audioMatch[1].split(' ')
         const reorderedTypes = [opusPayloadType, ...payloadTypes.filter(pt => pt !== opusPayloadType)]
-        sdp = sdp.replace(audioLineRegex, `m=audio ${audioMatch[0].split(' ')[1]} UDP/TLS/RTP/SAVPF ${reorderedTypes.join(' ')}\r\n`)
+        const port = audioMatch[0].split(' ')[1]
+        sdp = sdp.replace(audioLineRegex, `m=audio ${port} UDP/TLS/RTP/SAVPF ${reorderedTypes.join(' ')}\r\n`)
       }
       
       // Add Opus-specific optimizations
@@ -362,48 +361,59 @@ export function AudioProvider({ children }) {
       }
     }
 
-    // play remote tracks
+    // Handle incoming remote streams (from broadcast test pattern)
     pc.ontrack = (event) => {
       try {
-        console.log(`Received remote track from ${peerSocketId}:`, event.track.kind)
-        const remoteStream = event.streams && event.streams[0]
+        console.log(`[Audio] Received remote stream from ${peerSocketId}`)
+        const remoteStream = event.streams[0]
+        
         if (remoteStream) {
-          // attach to an audio element and autoplay
-          let audioEl = document.getElementById(`remote_audio_${peerSocketId}`)
-          if (!audioEl) {
-            audioEl = document.createElement('audio')
-            audioEl.id = `remote_audio_${peerSocketId}`
-            audioEl.autoplay = true
-            audioEl.playsInline = true
-            audioEl.controls = false // Hide controls but keep for debugging if needed
-            audioEl.volume = 1.0
-            audioEl.setAttribute('data-peer', peerSocketId)
-            document.body.appendChild(audioEl)
-            console.log(`Created audio element for peer ${peerSocketId}`)
+          // Create audio element for remote stream (simplified from broadcast test)
+          const audioElement = document.createElement('audio')
+          audioElement.srcObject = remoteStream
+          audioElement.autoplay = true
+          audioElement.controls = false
+          audioElement.id = `remote-audio-${peerSocketId}`
+          audioElement.volume = 1.0
+          
+          // Add to DOM (hidden container)
+          let container = document.getElementById('remote-audio-container')
+          if (!container) {
+            container = document.createElement('div')
+            container.id = 'remote-audio-container'
+            container.style.display = 'none'
+            document.body.appendChild(container)
           }
           
-          audioEl.srcObject = remoteStream
+          // Remove old audio element if exists
+          const oldElement = document.getElementById(`remote-audio-${peerSocketId}`)
+          if (oldElement) {
+            oldElement.remove()
+          }
           
-          // Try to play with better error handling
-          const playAttempt = audioEl.play()
+          container.appendChild(audioElement)
+          console.log(`[Audio] Created audio element for peer ${peerSocketId}`)
+          
+          // Try to play with error handling
+          const playAttempt = audioElement.play()
           if (playAttempt && typeof playAttempt.catch === 'function') {
             playAttempt
-              .then(() => {
-                console.log(`Successfully playing audio from ${peerSocketId}`)
-              })
-              .catch((error) => {
-                console.warn(`Autoplay blocked for ${peerSocketId}:`, error.message)
-                // Add click listener to enable audio on user interaction
-                const enableAudio = () => {
-                  audioEl.play()
-                    .then(() => {
-                      console.log(`Audio started after user interaction for ${peerSocketId}`)
-                      document.removeEventListener('click', enableAudio)
-                    })
-                    .catch(console.error)
-                }
-                document.addEventListener('click', enableAudio, { once: true })
-              })
+                .then(() => {
+                  console.log(`Successfully playing audio from ${peerSocketId}`)
+                })
+                .catch((error) => {
+                  console.warn(`Autoplay blocked for ${peerSocketId}:`, error.message)
+                  // Add click listener to enable audio on user interaction
+                  const enableAudio = () => {
+                    audioElement.play()
+                      .then(() => {
+                        console.log(`Audio started after user interaction for ${peerSocketId}`)
+                        document.removeEventListener('click', enableAudio)
+                      })
+                      .catch(console.error)
+                  }
+                  document.addEventListener('click', enableAudio, { once: true })
+                })
           }
         }
       } catch (err) {
