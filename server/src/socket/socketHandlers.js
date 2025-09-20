@@ -88,6 +88,31 @@ export function setupSocketHandlers(io) {
         io.to(roomId).emit('participants-update', participants)
         console.log('[Backend] Emitted participants-update');
 
+        // Check if there's an active discussion and sync state with the new user
+        const room = roomManager.getRoom(roomId)
+        if (room && room.discussion && room.discussion.active) {
+          console.log(`[Backend] Syncing active discussion state with ${effectiveUserData.anonymousName}`)
+          
+          // Send discussion state to the newly joined user
+          const discussionState = {
+            topic: room.discussion.topic,
+            firstSpeaker: room.participants.find(p => p.id === room.participants[room.discussion.currentSpeakerIndex]?.id) || room.participants[0],
+            duration: room.discussion.speakingTime,
+            timeRemaining: room.discussion.timeRemaining,
+            currentSpeaker: room.participants[room.discussion.currentSpeakerIndex],
+            round: room.discussion.round
+          }
+          
+          socket.emit('discussion-started', discussionState)
+          console.log(`[Backend] Emitted discussion-started to ${effectiveUserData.anonymousName}:`, discussionState)
+          
+          // Also emit current speaker and timer state
+          if (discussionState.currentSpeaker) {
+            socket.emit('speaker-changed', discussionState.currentSpeaker)
+          }
+          socket.emit('timer-update', discussionState.timeRemaining)
+        }
+
         // Check if we can start the discussion
         checkAndStartDiscussion(roomId)
 
@@ -102,8 +127,12 @@ export function setupSocketHandlers(io) {
      */
     socket.on('user-ready', () => {
       try {
+        console.log(`[Backend] Received user-ready from ${socket.id}`)
         const roomId = socket.currentRoom
-        if (!roomId) return
+        if (!roomId) {
+          console.log(`[Backend] No room found for socket ${socket.id}`)
+          return
+        }
         
         console.log(`✅ ${userData.anonymousName} is ready`)
         
@@ -113,11 +142,13 @@ export function setupSocketHandlers(io) {
         
         // Get updated participants
         const participants = roomManager.getRoomParticipants(roomId)
+        console.log(`[Backend] Updated participants after ready:`, participants.map(p => ({ name: p.anonymousName, ready: p.isReady })))
         
         // Emit updated participants
         io.to(roomId).emit('participants-update', participants)
         
         // Check if we can start the discussion
+        console.log(`[Backend] Checking if discussion can start...`)
         checkAndStartDiscussion(roomId)
         
       } catch (error) {
@@ -290,28 +321,31 @@ export function setupSocketHandlers(io) {
        * These events relay SDP and ICE messages to the intended peer socket id
        * Use 'targetSocketId' for consistency with frontend and broadcast test
        */
-      socket.on('webrtc-offer', ({ targetSocketId, offer }) => {
+      socket.on('webrtc-offer', ({ to, sdp }) => {
         try {
-          if (!targetSocketId) return
-          io.to(targetSocketId).emit('webrtc-offer', { fromSocketId: socket.id, offer })
+          if (!to) return
+          console.log(`[WebRTC] Relaying offer from ${socket.id} to ${to}`)
+          io.to(to).emit('webrtc-offer', { from: socket.id, sdp })
         } catch (err) {
           console.error('Error relaying webrtc-offer:', err)
         }
       })
 
-      socket.on('webrtc-answer', ({ targetSocketId, answer }) => {
+      socket.on('webrtc-answer', ({ to, sdp }) => {
         try {
-          if (!targetSocketId) return
-          io.to(targetSocketId).emit('webrtc-answer', { fromSocketId: socket.id, answer })
+          if (!to) return
+          console.log(`[WebRTC] Relaying answer from ${socket.id} to ${to}`)
+          io.to(to).emit('webrtc-answer', { from: socket.id, sdp })
         } catch (err) {
           console.error('Error relaying webrtc-answer:', err)
         }
       })
 
-      socket.on('webrtc-ice-candidate', ({ targetSocketId, candidate }) => {
+      socket.on('webrtc-ice-candidate', ({ to, candidate }) => {
         try {
-          if (!targetSocketId) return
-          io.to(targetSocketId).emit('webrtc-ice-candidate', { fromSocketId: socket.id, candidate })
+          if (!to) return
+          console.log(`[WebRTC] Relaying ICE candidate from ${socket.id} to ${to}`)
+          io.to(to).emit('webrtc-ice-candidate', { from: socket.id, candidate })
         } catch (err) {
           console.error('Error relaying ice candidate:', err)
         }
@@ -322,9 +356,14 @@ export function setupSocketHandlers(io) {
      */
     socket.on('ready-for-webrtc', () => {
       try {
+        console.log(`[WebRTC] ${socket.id} signaled readiness for WebRTC`)
         const roomId = socket.currentRoom
-        if (!roomId) return
+        if (!roomId) {
+          console.log(`[WebRTC] No room found for socket ${socket.id}`)
+          return
+        }
         const participants = roomManager.getRoomParticipants(roomId)
+        console.log(`[WebRTC] Sending participants update to ${socket.id}:`, participants.length, 'participants')
         // Re-emit full participant list only to requester to trigger offer creation
         socket.emit('participants-update', participants)
       } catch (e) {
@@ -332,7 +371,19 @@ export function setupSocketHandlers(io) {
       }
     })
 
-    // ===== BROADCAST TEST HANDLERS =====
+    /**
+     * Manual trigger for starting discussion (for testing)
+     */
+    socket.on('start-discussion-manual', () => {
+      try {
+        const roomId = socket.currentRoom
+        if (!roomId) return
+        console.log(`[Backend] Manual discussion start triggered for room: ${roomId}`)
+        checkAndStartDiscussion(roomId)
+      } catch (e) {
+        console.warn('start-discussion-manual handler error:', e.message)
+      }
+    })    // ===== BROADCAST TEST HANDLERS =====
     // Simple broadcast test - first person becomes broadcaster, others listeners
     
     /**
@@ -479,11 +530,18 @@ export function setupSocketHandlers(io) {
    */
   async function checkAndStartDiscussion(roomId) {
     try {
+      console.log(`[Backend] checkAndStartDiscussion called for room: ${roomId}`)
       const room = roomManager.getRoom(roomId)
-      if (!room) return
+      if (!room) {
+        console.log(`[Backend] Room ${roomId} not found`)
+        return
+      }
       const participants = room.participants
       const readyCount = participants.filter(p => p.isReady).length
       const minParticipants = parseInt(process.env.MIN_PARTICIPANTS) || 1
+      
+      console.log(`[Backend] Room status - Total: ${participants.length}, Ready: ${readyCount}, Min: ${minParticipants}, Discussion active: ${room.discussion?.active || false}`)
+      
       if (participants.length >= minParticipants && readyCount >= minParticipants && !room.discussion.active) {
         console.log(`🚀 Starting discussion in room: ${roomId}`)
         const topic = await generateDiscussionTopic()
@@ -493,7 +551,7 @@ export function setupSocketHandlers(io) {
         room.discussion = {
           active: true,
           topic,
-            currentSpeakerIndex: 0,
+          currentSpeakerIndex: 0,
           speakingTime,
           timeRemaining: speakingTime,
           round: 1,
@@ -513,8 +571,13 @@ export function setupSocketHandlers(io) {
           roundsCompleted: 0
         }).catch(e => console.warn('Session save failed:', e.message))
         const firstSpeaker = participants[0]
+        console.log(`[Backend] Emitting discussion-started with firstSpeaker:`, firstSpeaker.anonymousName)
         io.to(roomId).emit('discussion-started', { topic, firstSpeaker, duration: speakingTime })
         startSpeakingTimer(roomId)
+      } else if (room.discussion?.active) {
+        console.log(`[Backend] Discussion already active in room: ${roomId}`)
+      } else {
+        console.log(`[Backend] Discussion not ready yet - need ${minParticipants} participants, ${minParticipants} ready`)
       }
     } catch (error) {
       console.error('Error checking discussion start:', error)

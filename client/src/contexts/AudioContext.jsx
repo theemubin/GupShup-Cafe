@@ -13,6 +13,10 @@ const AudioContext = createContext()
  * Manages audio state and WebRTC functionality
  */
 export function AudioProvider({ children }) {
+  const { socket, connected } = useSocket()
+  // Track if we have already signaled WebRTC readiness
+  const [webrtcReadySignaled, setWebrtcReadySignaled] = useState(false)
+
   useEffect(() => {
     if (socket) {
       console.log('[Audio][Debug] Socket object available', socket)
@@ -24,6 +28,7 @@ export function AudioProvider({ children }) {
       })
     }
   }, [socket])
+
   const [audioEnabled, setAudioEnabled] = useState(false)
   const [micPermission, setMicPermission] = useState(null) // null, 'granted', 'denied'
   const [localStream, setLocalStream] = useState(null)
@@ -32,7 +37,6 @@ export function AudioProvider({ children }) {
   const [peers, setPeers] = useState({}) // map socketId -> RTCPeerConnection
   const [remoteStreams, setRemoteStreams] = useState({}) // map socketId -> MediaStream
   const [userRole, setUserRole] = useState('listener') // Track user's current role
-  const { socket, connected } = useSocket()
   const localStreamRef = React.useRef(null)
 
   /**
@@ -41,12 +45,17 @@ export function AudioProvider({ children }) {
    */
   // Request microphone access and set up local stream ONCE per session
   const requestMicrophoneAccess = async () => {
+    console.log('[Audio] requestMicrophoneAccess called');
+    
     if (localStreamRef.current) {
+      console.log('[Audio] Using existing local stream');
       setMicPermission('granted')
       setAudioEnabled(true)
       return localStreamRef.current
     }
+    
     try {
+      console.log('[Audio] Requesting microphone access from browser');
       const audioConstraints = {
         audio: {
           echoCancellation: true,
@@ -65,14 +74,13 @@ export function AudioProvider({ children }) {
         }
       }
       const stream = await navigator.mediaDevices.getUserMedia(audioConstraints)
+      console.log('[Audio] Microphone access granted, stream:', stream);
       localStreamRef.current = stream
       setLocalStream(stream)
       setMicPermission('granted')
       setAudioEnabled(true)
       setupAudioLevelMonitoring(stream)
-      if (socket && connected) {
-        socket.emit('ready-for-webrtc')
-      }
+      // Do not emit 'ready-for-webrtc' here; emit only after both localStream and participants-update are ready
       return stream
     } catch (error) {
       console.error('Error accessing microphone:', error)
@@ -208,6 +216,12 @@ export function AudioProvider({ children }) {
     socket.on('participants-update', (updatedParticipants) => {
       try {
         console.log(`[Audio] Participants update received. Total: ${updatedParticipants.length}, My role: ${userRole}, Local stream: ${!!localStream}`)
+        // Only emit 'ready-for-webrtc' after both localStream and participants-update are ready, and only once
+        if (localStream && !webrtcReadySignaled) {
+          setWebrtcReadySignaled(true)
+          console.log('[Audio] Emitting ready-for-webrtc after both localStream and participants-update')
+          socket.emit('ready-for-webrtc')
+        }
         const otherPeers = updatedParticipants.filter(p => p.socketId && p.socketId !== socket.id)
         console.log(`[Audio] Other peers: ${otherPeers.length}`)
         otherPeers.forEach(p => {
@@ -412,10 +426,26 @@ export function AudioProvider({ children }) {
   /**
    * Enable audio for speaking (unmute)
    */
-  const enableSpeaking = () => {
-    if (localStream && isMuted) {
+  const enableSpeaking = async () => {
+    console.log('[Audio] enableSpeaking called');
+    console.log('[Audio] Current state:', { localStream: !!localStream, isMuted, userRole });
+    
+    // Request microphone access if we don't have a local stream yet
+    if (!localStream) {
+      console.log('[Audio] Requesting microphone access for speaking')
+      await requestMicrophoneAccess()
+    }
+    
+    // Update user role to speaker
+    updateUserRole('speaker')
+    
+    // Unmute if we're muted
+    if (isMuted) {
+      console.log('[Audio] Unmuting microphone');
       toggleMute()
     }
+    
+    console.log('[Audio] enableSpeaking completed');
   }
 
   /**
@@ -445,12 +475,7 @@ export function AudioProvider({ children }) {
   useEffect(() => {
     if (socket && connected) {
       setupPeerSignaling()
-      
-      // Signal readiness for WebRTC connections (both speakers and listeners)
-      console.log(`[Audio] Signaling WebRTC readiness as ${userRole}`)
-      socket.emit('ready-for-webrtc')
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket, connected, userRole])
 
   // Check for browser support

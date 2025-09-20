@@ -112,7 +112,16 @@ function LobbyPage() {
     socket.on('participants-update', (updatedParticipants) => {
       console.log('[Lobby][Debug] Received participants-update:', updatedParticipants)
       setParticipants(updatedParticipants)
-      console.log('[Lobby][Debug] Current participants state:', updatedParticipants)
+      // Enhanced debug: print all roles and readiness
+      console.log('[Lobby][Debug] Participants array:', updatedParticipants.map(p => ({name: p.anonymousName, role: p.role, isReady: p.isReady, id: p.id, socketId: p.socketId})))
+      console.log('[Lobby][Debug] Local userRole:', userRole, 'selectedRole:', selectedRole)
+      // Find local participant in the update
+      const local = updatedParticipants.find(p => p.socketId === socket.id)
+      if (local) {
+        console.log('[Lobby][Debug] Local participant from update:', local)
+      } else {
+        console.log('[Lobby][Debug] Local participant not found in update. Socket ID:', socket.id)
+      }
       if (updatedParticipants.length >= 1) {
         setSystemMessage('Ready to start! Click "Ready" when you want to begin.')
       } else {

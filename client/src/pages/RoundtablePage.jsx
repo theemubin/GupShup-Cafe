@@ -83,16 +83,38 @@ function RoundtablePage() {
       setTopic(newTopic);
     };
 
+    const handleDiscussionStarted = ({ topic, firstSpeaker, duration }) => {
+      console.log('[Roundtable] Discussion started:', { topic, firstSpeaker, duration });
+      console.log('[Roundtable] Current user:', user);
+      console.log('[Roundtable] Is current user first speaker?', firstSpeaker && firstSpeaker.id === user?.id);
+      
+      setTopic(topic);
+      setCurrentTopic(topic);
+      setSpeakingDuration(duration);
+      setTimeRemaining(duration);
+      setCurrentSpeaker(firstSpeaker);
+      
+      // Enable speaking if current user is the first speaker
+      if (firstSpeaker && firstSpeaker.id === user?.id) {
+        console.log('[Roundtable] Current user is first speaker - enabling speaking');
+        enableSpeaking();
+      } else {
+        console.log('[Roundtable] Current user is not first speaker');
+      }
+    };
+
     // No longer need a 'discussion-started' listener here
 
     socket.on('participants-update', handleParticipantsUpdate);
     socket.on('speaker-changed', handleSpeakerChange);
     socket.on('topic-update', handleTopicUpdate);
+    socket.on('discussion-started', handleDiscussionStarted);
 
     return () => {
       socket.off('participants-update', handleParticipantsUpdate);
       socket.off('speaker-changed', handleSpeakerChange);
       socket.off('topic-update', handleTopicUpdate);
+      socket.off('discussion-started', handleDiscussionStarted);
     };
   }, [socket, user, enableSpeaking, disableSpeaking])
 
